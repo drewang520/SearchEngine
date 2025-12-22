@@ -57,6 +57,9 @@ Thumbs.db
 # 临时文件
 *.tmp
 
+# .txt
+# * .txt
+
 # 测试覆盖率
 *.gcda
 *.gcno
