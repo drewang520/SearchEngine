@@ -1,0 +1,63 @@
+# 编译生成的文件
+*.o
+*.a
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# 可执行文件
+*.exe
+*.out
+*.app
+
+# CMake 生成的文件
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+install_manifest.txt
+compile_commands.json
+
+# 构建目录（推荐使用外部构建）
+build/
+_build/
+Debug/
+Release/
+x64/
+x86/
+*.dir/
+*.vcxproj*
+*.sln
+
+# 依赖库目录
+lib/
+bin/
+
+# 包管理器文件
+conan.lock
+conanbuildinfo.*
+conanfile.py
+conanfile.txt
+
+# 编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统生成的文件
+.DS_Store
+Thumbs.db
+
+# 日志文件
+*.log
+
+# 临时文件
+*.tmp
+
+# 测试覆盖率
+*.gcda
+*.gcno
+coverage/
