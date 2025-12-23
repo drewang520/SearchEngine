@@ -17,10 +17,12 @@ public:
     string dealWord(string word);
     void buildEnDict();
     void buildCnDict();
-    void createIndex();
+    void createEnIndex();
+    void createCnIndex();
     void storeDict(string savefile);
     void storeIndex(string savefile);
     void printFile() const;
+    void CnDispatch(string sentence);
 
 private:
     vector<string> _files;

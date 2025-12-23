@@ -42,6 +42,7 @@ conanfile.txt
 
 # 编辑器文件
 .vscode/
+.cache/
 .idea/
 *.swp
 *.swo

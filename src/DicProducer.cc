@@ -1,4 +1,6 @@
 #include "DicProducer.h"
+#include "cppjieba/Jieba.hpp"
+#include <climits>
 #include <cstddef>
 #include <sys/types.h>
 #include <ctype.h>
@@ -16,12 +18,13 @@ using std::ofstream;
 DicProducer::DicProducer(string filename)
 {
     DIR * pdir = opendir(filename.c_str());
-    string file;
-    _files.reserve(50);
+    _files.reserve(200);
     if (pdir == nullptr)
     {
-        //该路径为文件
+        _files.clear();
+        //该路径为文件,处理英文
         ifstream ifs(filename);
+        string file;
         string line;
         while (std::getline(ifs, line))
         {
@@ -37,27 +40,44 @@ DicProducer::DicProducer(string filename)
     }
     else
     {
-        // 该路径为目录
+        // 该路径为目录, 处理中文
+        _files.clear();
         struct dirent * pdirent;        
         while ((pdirent = readdir(pdir)) != nullptr)
         {
-            string fileName = filename + pdirent->d_name;
+            string fileName = filename + '/' + pdirent->d_name;
             std::cout << fileName << "\n";
             ifstream ifs(fileName);
-            string line;
-            while (std::getline(ifs, line))
-            {
-                string word;
-                istringstream isf(line);
-                while (isf >> word)
-                {
-                    string newWord = dealWord(word);
-                    file.append(newWord + ' ');
-                }
-            }
-            _files.push_back(file);
+            char * buf = new char[65550]();
+            ifs.read(buf, 65550);
+            /* std::cout << "buf.strlen = " << strlen(buf) << "\n"; */
+            CnDispatch(buf);
+            std::cout << "_file.size() = " << _files.size() << "\n";
         }
+        std::cout << "_file.size() = " << _files.size() << "\n";
         std::cout << "finish\n";
+    }
+}
+
+void DicProducer::CnDispatch(string line)
+{
+    const char * dict_path = "../raw_data/module1/dict/jieba.dict.utf8";
+    const char * model_path = "../raw_data/module1/dict/hmm_model.utf8";
+    const char * user_dict_path = "../raw_data/module1/dict/user.dict.utf8";
+    const char * idf_path = "../raw_data/module1/dict/idf.utf8";
+    const char * stop_word_path = "../raw_data/module1/dict/stop_words.utf8";
+    cppjieba::Jieba jieba(dict_path, model_path, user_dict_path, idf_path, stop_word_path);
+    vector<string> words;
+    jieba.Cut(line, words, true);
+
+    //test
+    /* std::cout  << "test: _files.empty() = " << _files.empty() << "\n"; */
+    if (!words.empty())
+    {
+        for (size_t i = 0; i < words.size(); ++i)
+        {
+            _files.push_back(words[i]);
+        }
     }
 }
 
@@ -90,6 +110,7 @@ void DicProducer::printFile() const
 
 void DicProducer::buildEnDict()
 {
+    _dict.clear();
     //加载并清洗英文停用词
     set<string> _stopWords;
     ifstream ifs("../raw_data/module1/yuliao/stop-words-list/stop_words_eng.txt");
@@ -126,11 +147,56 @@ void DicProducer::buildEnDict()
 
 void DicProducer::buildCnDict()
 {
+    _dict.clear();
+    //加载并清洗中文停用词和_files
+    set<string> _stopWords;
+    ifstream ifs("../raw_data/module1/yuliao/stop-words-list/stop_words_zh.txt");
+    string line;
+    while (std::getline(ifs, line))
+    {
+        if (!line.empty() && line.back() == '\r')
+        {
+            line.pop_back();
+        }
+        _stopWords.insert(line);
+    }
+
+    //清洗_files中的\r \n
+    vector<string> _clearDic;
+    for (size_t index = 0; index < _files.size(); ++index)
+    {
+        if (!_files[index].empty() && _files[index].back() == '\r' || _files[index].back() == '\n')
+        {
+            _files[index].pop_back();
+        }
+        _clearDic.push_back(_files[index]);
+    }
+    
+    //构造中文词典
+    for (auto word : _clearDic)
+    {
+        istringstream isf(word);
+        string Word;
+        while (isf >> Word)
+        {
+            if (_stopWords.find(Word) == _stopWords.end())
+            {
+                pair<map<string, int>::iterator, bool> p
+                                                = _dict.insert({Word, 1});
+                if (!p.second)
+                {
+                    ++p.first->second;
+                }
+            }
+        }
+    }
 
 }
 
-void DicProducer::createIndex()
+void DicProducer::createEnIndex()
 {
+    _index.clear();
+    _dict2.clear();
     for (auto pairs : _dict)
     {
         _dict2.push_back(pairs);
@@ -154,9 +220,43 @@ void DicProducer::createIndex()
 
 }
 
+void DicProducer::createCnIndex()
+{
+    _index.clear();
+    _dict2.clear();
+    for (auto pairs : _dict)
+    {
+        _dict2.push_back(pairs);
+    }
+
+    for (size_t index = 0; index < _dict2.size(); ++index)
+    {
+        string word = _dict2[index].first;
+        set<int> _setNum = {};
+        _setNum.insert(index);
+        int length = 1;
+        for (size_t i = 0; i < word.size();)
+        {
+            unsigned char c = word[i];
+            if (c >= 0xF0) length = 4;
+            else if (c >= 0xE0) length = 3;
+            else if (c >= 0xC0) length = 2;
+
+            string Word = word.substr(i, length);
+            pair<map<string, set<int>>::iterator, bool> p
+                                                = _index.insert({ Word, _setNum});
+            if (!p.second)
+            {
+                p.first->second.insert(index);
+            }
+            i += length;
+        }
+    }
+}
+
 void DicProducer::storeDict(string savefile)
 {
-    ofstream ofs(savefile);
+    ofstream ofs(savefile, std::ios::app);
     for (auto it: _dict)
     {
         ofs << it.first << " " << it.second << "\n";
@@ -166,7 +266,7 @@ void DicProducer::storeDict(string savefile)
 
 void DicProducer::storeIndex(string savefile)
 {
-    ofstream ofs(savefile);
+    ofstream ofs(savefile, std::ios::app);
     for (auto it: _index)
     {
         ofs << it.first << " "; 
