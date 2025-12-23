@@ -2,6 +2,7 @@
 #include "cppjieba/Jieba.hpp"
 #include <climits>
 #include <cstddef>
+#include <strings.h>
 #include <sys/types.h>
 #include <ctype.h>
 #include <dirent.h>
@@ -10,6 +11,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 using std::istringstream;
 using std::ifstream;
@@ -43,43 +45,64 @@ DicProducer::DicProducer(string filename)
         // 该路径为目录, 处理中文
         _files.clear();
         struct dirent * pdirent;        
+
+        const char * dict_path = "../raw_data/module1/dict/jieba.dict.utf8";
+        const char * model_path = "../raw_data/module1/dict/hmm_model.utf8";
+        const char * user_dict_path = "../raw_data/module1/dict/user.dict.utf8";
+        const char * idf_path = "../raw_data/module1/dict/idf.utf8";
+        const char * stop_word_path = "../raw_data/module1/dict/stop_words.utf8";
+        cppjieba::Jieba jieba(dict_path, model_path, user_dict_path, idf_path, stop_word_path);
+        vector<string> words;
+
+        char * buf = new char[65550]();
         while ((pdirent = readdir(pdir)) != nullptr)
         {
+            words.clear();
+            bzero(buf, 65550);
             string fileName = filename + '/' + pdirent->d_name;
             std::cout << fileName << "\n";
             ifstream ifs(fileName);
-            char * buf = new char[65550]();
             ifs.read(buf, 65550);
+
+            jieba.Cut(buf, words, true);
+            if (!words.empty())
+            {
+                for (size_t i = 0; i < words.size(); ++i)
+                {
+                    _files.push_back(words[i]);
+                }
+            }
             /* std::cout << "buf.strlen = " << strlen(buf) << "\n"; */
-            CnDispatch(buf);
+            /* CnDispatch(buf); */
             std::cout << "_file.size() = " << _files.size() << "\n";
         }
+        delete [] buf;
         std::cout << "_file.size() = " << _files.size() << "\n";
         std::cout << "finish\n";
     }
 }
 
-void DicProducer::CnDispatch(string line)
-{
-    const char * dict_path = "../raw_data/module1/dict/jieba.dict.utf8";
-    const char * model_path = "../raw_data/module1/dict/hmm_model.utf8";
-    const char * user_dict_path = "../raw_data/module1/dict/user.dict.utf8";
-    const char * idf_path = "../raw_data/module1/dict/idf.utf8";
-    const char * stop_word_path = "../raw_data/module1/dict/stop_words.utf8";
-    cppjieba::Jieba jieba(dict_path, model_path, user_dict_path, idf_path, stop_word_path);
-    vector<string> words;
-    jieba.Cut(line, words, true);
+/* void DicProducer::CnDispatch(string line) */
+/* { */
+    /* const char * dict_path = "../raw_data/module1/dict/jieba.dict.utf8"; */
+    /* const char * model_path = "../raw_data/module1/dict/hmm_model.utf8"; */
+    /* const char * user_dict_path = "../raw_data/module1/dict/user.dict.utf8"; */
+    /* const char * idf_path = "../raw_data/module1/dict/idf.utf8"; */
+    /* const char * stop_word_path = "../raw_data/module1/dict/stop_words.utf8"; */
+    /* cppjieba::Jieba jieba(dict_path, model_path, user_dict_path, idf_path, stop_word_path); */
+    /* vector<string> words; */
+    /* jieba.Cut(line, words, true); */
 
     //test
     /* std::cout  << "test: _files.empty() = " << _files.empty() << "\n"; */
-    if (!words.empty())
-    {
-        for (size_t i = 0; i < words.size(); ++i)
-        {
-            _files.push_back(words[i]);
-        }
-    }
-}
+    /* if (!words.empty()) */
+    /* { */
+    /*     for (size_t i = 0; i < words.size(); ++i) */
+    /*     { */
+    /*         _files.push_back(words[i]); */
+    /*     } */
+    /* } */
+/* } */
 
 string DicProducer::dealWord(string word)
 {
