@@ -8,10 +8,31 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/include
 )
 
-file(GLOB_RECURSE SRC_FILES
-    ${PROJECT_SOURCE_DIR}/src/*.cc
-    ${PROJECT_SOURCE_DIR}/src/*.cpp
-)
+# file(GLOB_RECURSE SRC_FILES
+#     ${PROJECT_SOURCE_DIR}/src/*.cc
+#     ${PROJECT_SOURCE_DIR}/src/*.cpp
+# )
 
-add_executable(search_engine ${SRC_FILES})
+add_executable(dicProducer 
+        src/DicProducer.cc
+        src/testDicProducer.cc)
+
+add_executable(dictionary
+        src/Dictionary.cc
+        src/testDictionary.cc)
+
+add_executable(reactor 
+        src/Acceptor.cc
+        src/Condition.cc
+        src/EventLoop.cc
+        src/InetAddress.cc
+        src/MutexLock.cc
+        src/Socket.cc
+        src/SocketIO.cc
+        src/TaskQueue.cc
+        src/TcpConnection.cc
+        src/TcpServer.cc
+        src/TestReactorv5.cc
+        src/Thread.cc
+        src/ThreadPool.cc)
 
