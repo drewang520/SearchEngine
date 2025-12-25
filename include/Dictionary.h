@@ -1,3 +1,4 @@
+#include "Configuration.h"
 #include <utility>
 #include <vector>
 #include <set>
@@ -13,7 +14,7 @@ using std::set;
 class Dictionary
 {
 public:
-    Dictionary();
+    Dictionary(Configuration * config);
     vector<pair<string, int>> & getDict();
     map<string, set<int>> & getIndex();
 
@@ -24,4 +25,6 @@ private:
 private:
     vector<pair<string, int>> _dict;
     map<string, set<int>> _index;
+    Configuration * _config;
+
 };

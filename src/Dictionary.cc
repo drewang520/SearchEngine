@@ -1,24 +1,27 @@
 #include "Dictionary.h"
+#include "Configuration.h"
 #include <cstddef>
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <iostream>
 
 using std::ifstream;
 using std::ofstream;
 using std::istringstream;
 
-Dictionary::Dictionary()
+Dictionary::Dictionary(Configuration * config)
+: _config(config)
 {
     init();
 }
 
 void Dictionary::init()
 {
-    string dicEn_path = "../data/dicEn.dat";
-    string dicCn_path = "../data/dicCn.dat";
-    string EnIndex_path = "../data/dicindexEn.dat";
-    string CnIndex_path = "../data/dicindexCn.dat";
+    string dicEn_path = _config->getConfig()["dicEn.dat"]; //"../data/dicEn.dat";
+    string dicCn_path = _config->getConfig()["dicCn.dat"]; //../data/dicCn.dat";
+    string EnIndex_path = _config->getConfig()["dicindexEn.dat"]; //"../data/dicindexEn.dat";
+    string CnIndex_path = _config->getConfig()["dicindexCn.dat"];// "../data/dicindexCn.dat";
     vector<string> dic_path = {dicCn_path, dicEn_path};
     vector<string> Index_path = {CnIndex_path, EnIndex_path};
 
@@ -47,9 +50,11 @@ void Dictionary::init()
             }
             _dict.push_back(p);
         }
-        if (path == "dicCn_path")
+        /* std::cout << "_dict.size(): " << _dict.size() << "\n"; */
+        if (path == dicCn_path)
         {
             Cn_length += _dict.size();
+            /* std::cout << "Cn_length = " << Cn_length << "\n"; */
         }
     }
 
@@ -72,7 +77,7 @@ void Dictionary::init()
                 }
                 else 
                 {
-                    if (path == "EnIndex_path")
+                    if (path == EnIndex_path)
                     {
                         p.second.insert(std::stoi(word) + Cn_length);        
                     }

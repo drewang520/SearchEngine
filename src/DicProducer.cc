@@ -17,7 +17,7 @@ using std::istringstream;
 using std::ifstream;
 using std::ofstream;
 
-DicProducer::DicProducer(string filename)
+DicProducer::DicProducer(const string& filename)
 {
     DIR * pdir = opendir(filename.c_str());
     _files.reserve(200);
@@ -52,6 +52,7 @@ DicProducer::DicProducer(string filename)
         const char * idf_path = "../raw_data/module1/dict/idf.utf8";
         const char * stop_word_path = "../raw_data/module1/dict/stop_words.utf8";
         cppjieba::Jieba jieba(dict_path, model_path, user_dict_path, idf_path, stop_word_path);
+        /* Jieba jieba; */
         vector<string> words;
 
         char * buf = new char[65550]();
@@ -82,27 +83,6 @@ DicProducer::DicProducer(string filename)
     }
 }
 
-/* void DicProducer::CnDispatch(string line) */
-/* { */
-    /* const char * dict_path = "../raw_data/module1/dict/jieba.dict.utf8"; */
-    /* const char * model_path = "../raw_data/module1/dict/hmm_model.utf8"; */
-    /* const char * user_dict_path = "../raw_data/module1/dict/user.dict.utf8"; */
-    /* const char * idf_path = "../raw_data/module1/dict/idf.utf8"; */
-    /* const char * stop_word_path = "../raw_data/module1/dict/stop_words.utf8"; */
-    /* cppjieba::Jieba jieba(dict_path, model_path, user_dict_path, idf_path, stop_word_path); */
-    /* vector<string> words; */
-    /* jieba.Cut(line, words, true); */
-
-    //test
-    /* std::cout  << "test: _files.empty() = " << _files.empty() << "\n"; */
-    /* if (!words.empty()) */
-    /* { */
-    /*     for (size_t i = 0; i < words.size(); ++i) */
-    /*     { */
-    /*         _files.push_back(words[i]); */
-    /*     } */
-    /* } */
-/* } */
 
 string DicProducer::dealWord(string word)
 {
@@ -131,12 +111,12 @@ void DicProducer::printFile() const
     }
 }
 
-void DicProducer::buildEnDict()
+void DicProducer::buildEnDict(const string& stop_words)
 {
     _dict.clear();
     //加载并清洗英文停用词
     set<string> _stopWords;
-    ifstream ifs("../raw_data/module1/yuliao/stop-words-list/stop_words_eng.txt");
+    ifstream ifs(stop_words);
     string line;
     while (std::getline(ifs, line))
     {
@@ -168,12 +148,12 @@ void DicProducer::buildEnDict()
     ifs.close();
 }
 
-void DicProducer::buildCnDict()
+void DicProducer::buildCnDict(const string& stop_words)
 {
     _dict.clear();
     //加载并清洗中文停用词和_files
     set<string> _stopWords;
-    ifstream ifs("../raw_data/module1/yuliao/stop-words-list/stop_words_zh.txt");
+    ifstream ifs(stop_words);
     string line;
     while (std::getline(ifs, line))
     {
@@ -240,7 +220,6 @@ void DicProducer::createEnIndex()
             }
         }
     }
-
 }
 
 void DicProducer::createCnIndex()
@@ -279,7 +258,7 @@ void DicProducer::createCnIndex()
 
 void DicProducer::storeDict(string savefile)
 {
-    ofstream ofs(savefile, std::ios::app);
+    ofstream ofs(savefile);
     for (auto it: _dict)
     {
         ofs << it.first << " " << it.second << "\n";
@@ -289,7 +268,7 @@ void DicProducer::storeDict(string savefile)
 
 void DicProducer::storeIndex(string savefile)
 {
-    ofstream ofs(savefile, std::ios::app);
+    ofstream ofs(savefile);
     for (auto it: _index)
     {
         ofs << it.first << " "; 

@@ -1,3 +1,5 @@
+#include "Configuration.h"
+/* #include "Jieba.h" */
 #include <utility>
 #include <vector>
 #include <map>
@@ -13,16 +15,17 @@ using std::map;
 class DicProducer
 {
 public:
-    DicProducer(string);
-    string dealWord(string word);
-    void buildEnDict();
-    void buildCnDict();
+    DicProducer(const string&);
+    void buildEnDict(const string&);
+    void buildCnDict(const string&);
     void createEnIndex();
     void createCnIndex();
     void storeDict(string savefile);
     void storeIndex(string savefile);
     void printFile() const;
     /* void CnDispatch(string sentence); */
+private:
+    string dealWord(string word);
 
 private:
     vector<string> _files;

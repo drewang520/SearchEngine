@@ -1,0 +1,13 @@
+{
+    "ip" : "127.0.0.1",
+    "port" : "8888",
+    "jieba_dict" : "../raw_data/module1/dict",
+    "En_dict" : "../raw_data/module1/yuliao/english.txt",
+    "Cn_dict" : "../raw_data/module1/yuliao/cn_art",
+    "dicEn.dat" : "../data/dicEn.dat",
+    "dicCn.dat" : "../data/dicCn.dat",
+    "dicindexEn.dat" : "../data/dicindexEn.dat",
+    "dicindexCn.dat" : "../data/dicindexCn.dat",
+    "stop_words_en" : "../raw_data/module1/yuliao/stop-words-list/stop_words_eng.txt",
+    "stop_words_cn" : "../raw_data/module1/yuliao/stop-words-list/stop_words_zh.txt"
+}

@@ -13,26 +13,36 @@ include_directories(
 #     ${PROJECT_SOURCE_DIR}/src/*.cpp
 # )
 
+add_executable(Config_test
+        src/Configuration.cc
+        src/test_config.cc)
+
 add_executable(dicProducer 
         src/DicProducer.cc
-        src/testDicProducer.cc)
+        src/testDicProducer.cc
+        src/Configuration.cc
+    )
 
 add_executable(dictionary
         src/Dictionary.cc
-        src/testDictionary.cc)
+        src/testDictionary.cc
+        src/Configuration.cc
+    )
 
-add_executable(reactor 
-        src/Acceptor.cc
-        src/Condition.cc
-        src/EventLoop.cc
-        src/InetAddress.cc
-        src/MutexLock.cc
-        src/Socket.cc
-        src/SocketIO.cc
-        src/TaskQueue.cc
-        src/TcpConnection.cc
-        src/TcpServer.cc
-        src/TestReactorv5.cc
-        src/Thread.cc
-        src/ThreadPool.cc)
-
+add_executable(reactor
+        src/Reactor/Acceptor.cc
+        src/Reactor/Condition.cc
+        src/Reactor/EventLoop.cc
+        src/Reactor/InetAddress.cc
+        src/Reactor/MutexLock.cc
+        src/Reactor/Socket.cc
+        src/Reactor/SocketIO.cc
+        src/Reactor/TaskQueue.cc
+        src/Reactor/TcpConnection.cc
+        src/Reactor/TcpServer.cc
+        src/Reactor/TestReactorv5.cc
+        src/Reactor/Thread.cc
+        src/Reactor/ThreadPool.cc
+        src/Reactor/Acceptor.cc
+        src/Reactor/Condition.cc
+    )
