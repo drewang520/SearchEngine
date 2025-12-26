@@ -13,6 +13,7 @@ using std::unique_ptr;
 using std::string;
 using std::priority_queue;
 
+
 struct CandidateResult
 {
     string _word;
@@ -20,16 +21,46 @@ struct CandidateResult
     int _dist;
 };
 
+struct CompareHot
+{
+    bool operator()(const CandidateResult& lhs, const CandidateResult& rhs) const
+    {
+        if (lhs._dist != rhs._dist)
+        {
+            return lhs._dist > rhs._dist;
+        }
+        return lhs._freq < rhs._freq;               
+    }
+};
+
+/* struct CompareHot */
+/* { */
+/*     bool operator()(const CandidateResult& lhs, const CandidateResult& rhs) const */
+/*     { */
+/*         return lhs._freq > rhs._freq; */
+/*     } */
+/* }; */
+
+using CandidateResult = struct CandidateResult;
+
 class KeyRecommander
 {
 public:
     KeyRecommander(string queryWords, const TcpConnectionPtr& conn, Configuration * config);
+    /* KeyRecommander(string queryWords, Configuration * config); */
     vector<string> doQuery();
 
 private:
+    int editDistance(const string&, const string&);
+    vector<string> candidataSort(map<string, int>&, vector<string>&);
+    void queryIndex(map<string, int>& ,map<string ,set<int>>&, 
+                        vector<pair<string, int>>&, const string&);
+
+private:
     string _queryWords;
-    std::priority_queue<CandidateResult> _prique;
+    std::priority_queue<CandidateResult, vector<CandidateResult>, CompareHot> _prique;
     TcpConnectionPtr _conn;
     Configuration * _config;
     unique_ptr<Dictionary> _pDict;
 };
+

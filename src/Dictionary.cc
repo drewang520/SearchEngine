@@ -101,29 +101,29 @@ void Dictionary::init()
 
 vector<pair<string, int>> & Dictionary::getDict()
 {
-    ofstream ofs( "../data/dic.dat");
-    for (auto it: _dict)
-    {
-        ofs << it.first << " " << it.second << "\n";
-    }
-    ofs.close();
+    /* ofstream ofs( "../data/dic.dat"); */
+    /* for (auto it: _dict) */
+    /* { */
+    /*     ofs << it.first << " " << it.second << "\n"; */
+    /* } */
+    /* ofs.close(); */
     
     return _dict;
 }
 
 map<string, set<int>> & Dictionary::getIndex()
 {
-    ofstream ofs("../data/dicIndex.dat");
-    for (auto it: _index)
-    {
-        ofs << it.first << " "; 
-        for (auto sets: it.second)
-        {
-            ofs << sets << " ";
-        }
-        ofs << "\n";
-    }
-    ofs.close();
+    /* ofstream ofs("../data/dicIndex.dat"); */
+    /* for (auto it: _index) */
+    /* { */
+    /*     ofs << it.first << " "; */ 
+    /*     for (auto sets: it.second) */
+    /*     { */
+    /*         ofs << sets << " "; */
+    /*     } */
+    /*     ofs << "\n"; */
+    /* } */
+    /* ofs.close(); */
     return _index;
 }
 

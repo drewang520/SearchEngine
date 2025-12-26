@@ -23,6 +23,13 @@ add_executable(dicProducer
         src/Configuration.cc
     )
 
+add_executable(KeyCommander_test
+        src/Configuration.cc
+        src/Dictionary.cc
+        src/KeyRecommander.cc
+        src/test_KeyRecommander.cc
+    )
+
 add_executable(dictionary
         src/Dictionary.cc
         src/testDictionary.cc
