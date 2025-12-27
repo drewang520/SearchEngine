@@ -13,8 +13,7 @@ using std::unique_ptr;
 using std::string;
 using std::priority_queue;
 
-
-struct CandidateResult
+using CandidateResult = struct CandidateResult
 {
     string _word;
     int _freq;
@@ -33,21 +32,10 @@ struct CompareHot
     }
 };
 
-/* struct CompareHot */
-/* { */
-/*     bool operator()(const CandidateResult& lhs, const CandidateResult& rhs) const */
-/*     { */
-/*         return lhs._freq > rhs._freq; */
-/*     } */
-/* }; */
-
-using CandidateResult = struct CandidateResult;
-
 class KeyRecommander
 {
 public:
     KeyRecommander(string queryWords, const TcpConnectionPtr& conn, Configuration * config);
-    /* KeyRecommander(string queryWords, Configuration * config); */
     vector<string> doQuery();
 
 private:

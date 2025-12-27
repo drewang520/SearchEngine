@@ -6,6 +6,14 @@
 
 using std::string;
 
+using Message = struct TlvMessage
+{
+    //TLV
+    size_t messageLength;
+    size_t serverMode;
+    string message;
+};
+
 class SocketIO
 {
 public:

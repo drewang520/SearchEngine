@@ -70,7 +70,7 @@ vector<string> KeyRecommander::candidataSort(map<string, int>& ConnectWords, vec
     }
 
     size_t candidataNum = 0;
-    while (candidataNum != 10 && !_prique.empty())
+    while (!_prique.empty() && candidataNum != 10)
     {
         queryResult.push_back(_prique.top()._word);
         _prique.pop();

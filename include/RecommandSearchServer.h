@@ -1,11 +1,14 @@
+#ifndef _ECHO_SERVER_H_
+#define _ECHO_SERVER_H_
+#include "SocketIO.h"
 #include "ThreadPool.h"
 #include "TcpServer.h"
+#include "KeyRecommander.h"
 #include <functional>
 #include <iostream>
 
 using std::endl;
 using std::cout;
-
 
 class Mytask
 : public Task
@@ -26,16 +29,17 @@ public:
     void process() override
     {
         // msg相应的业务逻辑
-        // ...
-        _msg.append("drewang");
-        // ...
+        /* _msg.append("drewang"); */
+
         // 处理完毕后将msg返回给EventLoop进行IO操作
         _con->sendInLoop(_msg);
     }
+
 private:
     string _msg;
      TcpConnectionPtr _con;
 };
+
 
 class EchoServer
 {
@@ -85,3 +89,5 @@ private:
     ThreadPool _threadpool;
     TcpServer _tcpserver;
 };
+
+#endif
