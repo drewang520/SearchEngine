@@ -23,6 +23,13 @@ add_executable(dicProducer
         src/Configuration.cc
     )
 
+add_executable(PageProducer_test
+        src/Configuration.cc
+        src/PageProducer.cc
+        src/test_pageProducer.cc
+        src/tinyxml2.cpp
+    )
+
 add_executable(KeyCommander_test
         src/Configuration.cc
         src/Dictionary.cc

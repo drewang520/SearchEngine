@@ -4,10 +4,14 @@
     "jieba_dict" : "../raw_data/module1/dict",
     "En_dict" : "../raw_data/module1/yuliao/english.txt",
     "Cn_dict" : "../raw_data/module1/yuliao/art",
-    "dicEn.dat" : "../data/dicEn.dat",
-    "dicCn.dat" : "../data/dicCn.dat",
-    "dicindexEn.dat" : "../data/dicindexEn.dat",
-    "dicindexCn.dat" : "../data/dicindexCn.dat",
+    "dicEn.dat" : "../data/dic_data/dicEn.dat",
+    "dicCn.dat" : "../data/dic_data/dicCn.dat",
+    "dicindexEn.dat" : "../data/dic_data/dicindexEn.dat",
+    "dicindexCn.dat" : "../data/dic_data/dicindexCn.dat",
     "stop_words_en" : "../raw_data/module1/yuliao/stop-words-list/stop_words_eng.txt",
-    "stop_words_cn" : "../raw_data/module1/yuliao/stop-words-list/stop_words_zh.txt"
+    "stop_words_cn" : "../raw_data/module1/yuliao/stop-words-list/stop_words_zh.txt",
+
+    "page_src" : "../raw_data/module2/people_yuliao",
+    "ripepage" : "../data/page_data/ripepage.dat",
+    "pageoffset" : "../data/page_data/pageoffset.dat"
 }
