@@ -13,5 +13,7 @@
 
     "page_src" : "../raw_data/module2/people_yuliao",
     "ripepage" : "../data/page_data/ripepage.dat",
-    "pageoffset" : "../data/page_data/pageoffset.dat"
+    "pageoffset" : "../data/page_data/pageoffset.dat",
+    "newripepage" : "../data/page_data/newripepage.dat",
+    "newoffset" : "../data/page_data/newoffset.dat"
 }

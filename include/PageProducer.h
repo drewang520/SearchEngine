@@ -23,6 +23,7 @@ public:
     PageProducer(const string& pagePath);
     void create(const string& filepath, const string& filename);
     void store(const string& savePageFile, const string& saveOffsetFile);
+    void pageDeduplicat(const string& deDupPageLib, const string& deDupIndexLib);
 
 private:
     vector<RSSItem> _page;

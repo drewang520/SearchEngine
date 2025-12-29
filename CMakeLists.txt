@@ -23,6 +23,13 @@ add_executable(dicProducer
         src/Configuration.cc
     )
 
+add_executable(pageLibPreprocessor_test
+        src/Configuration.cc
+        src/pageLibPreprocessor.cc
+        src/tinyxml2.cpp
+        src/pageLibPreprocessor_test.cc
+    )
+
 add_executable(PageProducer_test
         src/Configuration.cc
         src/PageProducer.cc
