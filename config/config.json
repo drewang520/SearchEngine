@@ -15,5 +15,6 @@
     "ripepage" : "../data/page_data/ripepage.dat",
     "pageoffset" : "../data/page_data/pageoffset.dat",
     "newripepage" : "../data/page_data/newripepage.dat",
-    "newoffset" : "../data/page_data/newoffset.dat"
+    "newoffset" : "../data/page_data/newoffset.dat",
+    "invertIndexTable" : "../data/page_data/invertIndexTable.dat"
 }
