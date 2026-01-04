@@ -1,41 +1,86 @@
 #include "Configuration.h"
 #include "nlohmann/json.hpp"
-
+#include <pthread.h>
 #include <fstream>
+#include <filesystem>
+#include <string>
 
 using std::ifstream;
-
 using json = nlohmann::json;
 
 Configuration * Configuration::pInstance = nullptr;
+pthread_once_t Configuration::once = PTHREAD_ONCE_INIT;
+string Configuration::_filepath = "";
 
 Configuration::Configuration(const string& config_path)
 {
+    auto file_size = std::filesystem::file_size(config_path);
     ifstream ifs(config_path);
-    char * buf = new char[4096]();
-    ifs.read(buf, 4096);
+    char * buf = new char[file_size]();
+    ifs.read(buf, file_size);
     json file = json::parse(buf);    
-    for (auto [key, value]: file.items())
+    for (const auto &[key, value]: file.items())
     {
-        _config.insert({key, value});
+        if (value.is_string())
+        {
+            _config[key] = value.get<std::string>();
+        }
+        else if (value.is_number())
+        {
+            _config[key] = std::to_string(value.get<int>());
+        }
     }
-    
     delete [] buf;
 }
 
 map<string, string>& Configuration::getConfig()
 {
-    return pInstance->_config;
+    return _config;
 }
 
-
-Configuration * Configuration::createpInstance(const string& config_path)
+set<string>& Configuration::getStopWords()
 {
-    if (pInstance == nullptr)
+    ifstream ifs1(_config["stop_words_en"]);
+    ifstream ifs2(_config["stop_words_cn"]);
+    string line;
+    while (std::getline(ifs1, line))
     {
-        pInstance = new Configuration(config_path);
+        if (!line.empty() && line.back() == '\r')
+        {
+            line.pop_back();
+        }
+        _stopWords.insert(line);
     }
+    while (std::getline(ifs2, line))
+    {
+        // 删除行内所有的\r
+        line.erase(remove(line.begin(), line.end(), '\r'), line.end());
+        _stopWords.insert(line);
+    }
+    /* std::cout << "_stopWords.size = " << _stopWords.size() << "\n"; */
+    return _stopWords;
+}
+
+Configuration * Configuration::createpInstance()
+{
+    pthread_once(&once, init);
     return pInstance;
+}
+
+void Configuration::setConfigurFilePath(const string& config_path)
+{
+    _filepath = config_path;
+}
+
+void Configuration::setConfigurFilePath(const char * config_path)
+{
+    _filepath = config_path;
+}
+
+void Configuration::init()
+{
+    pInstance = new Configuration(_filepath);
+    atexit(destory);
 }
 
 void Configuration::destory()
@@ -43,5 +88,7 @@ void Configuration::destory()
     if (pInstance)
     {
         delete pInstance;
+        pInstance = nullptr;
     }
 }
+

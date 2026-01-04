@@ -37,6 +37,12 @@ add_executable(PageProducer_test
         src/tinyxml2.cpp
     )
 
+add_executable(WebPageSearch
+        src/Configuration.cc
+        src/WebPageQuery.cc
+        src/test_WebPageSearch.cc
+    )
+
 add_executable(KeyCommander_test
         src/Configuration.cc
         src/Dictionary.cc

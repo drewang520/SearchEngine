@@ -17,7 +17,7 @@ using std::istringstream;
 using std::ifstream;
 using std::ofstream;
 
-DicProducer::DicProducer(const string& filename)
+DicProducer::DicProducer(const string& filename, Configuration * pInstance)
 {
     DIR * pdir = opendir(filename.c_str());
     _files.reserve(200);
@@ -45,15 +45,14 @@ DicProducer::DicProducer(const string& filename)
         // 该路径为目录, 处理中文
         _files.clear();
         struct dirent * pdirent;        
-
-        const char * dict_path = "../raw_data/module1/dict/jieba.dict.utf8";
-        const char * model_path = "../raw_data/module1/dict/hmm_model.utf8";
-        const char * user_dict_path = "../raw_data/module1/dict/user.dict.utf8";
-        const char * idf_path = "../raw_data/module1/dict/idf.utf8";
-        const char * stop_word_path = "../raw_data/module1/dict/stop_words.utf8";
-        cppjieba::Jieba jieba(dict_path, model_path, user_dict_path, idf_path, stop_word_path);
-        /* Jieba jieba; */
         vector<string> words;
+
+        const char * dict_path = pInstance->getConfig()["dict_path"].c_str();
+        const char * model_path = pInstance->getConfig()["model_path"].c_str();
+        const char * user_dict_path = pInstance->getConfig()["user_dict_path"].c_str();
+        const char * idf_path = pInstance->getConfig()["idf_path"].c_str();
+        const char * stop_word_path = pInstance->getConfig()["stop_word_path"].c_str();
+        cppjieba::Jieba jieba(dict_path, model_path, user_dict_path, idf_path, stop_word_path);
 
         char * buf = new char[65550]();
         while ((pdirent = readdir(pdir)) != nullptr)
@@ -75,11 +74,11 @@ DicProducer::DicProducer(const string& filename)
             }
             /* std::cout << "buf.strlen = " << strlen(buf) << "\n"; */
             /* CnDispatch(buf); */
-            std::cout << "_file.size() = " << _files.size() << "\n";
+            /* std::cout << "_file.size() = " << _files.size() << "\n"; */
         }
         delete [] buf;
-        std::cout << "_file.size() = " << _files.size() << "\n";
-        std::cout << "finish\n";
+        /* std::cout << "_file.size() = " << _files.size() << "\n"; */
+        /* std::cout << "finish\n"; */
     }
 }
 
@@ -111,21 +110,9 @@ void DicProducer::printFile() const
     }
 }
 
-void DicProducer::buildEnDict(const string& stop_words)
+void DicProducer::buildEnDict(const set<string>& stopWords)
 {
     _dict.clear();
-    //加载并清洗英文停用词
-    set<string> _stopWords;
-    ifstream ifs(stop_words);
-    string line;
-    while (std::getline(ifs, line))
-    {
-        if (!line.empty() && line.back() == '\r')
-        {
-            line.pop_back();
-        }
-        _stopWords.insert(line);
-    }
 
     // 构造英文词典
     for (auto file : _files)
@@ -134,7 +121,7 @@ void DicProducer::buildEnDict(const string& stop_words)
         string word;
         while(isf >> word)
         {
-            if (_stopWords.find(word) == _stopWords.end())
+            if (stopWords.find(word) == stopWords.end())
             {
                 pair<map<string, int>::iterator, bool> p 
                                                 = _dict.insert({word, 1});
@@ -145,24 +132,11 @@ void DicProducer::buildEnDict(const string& stop_words)
             }
         }
     }
-    ifs.close();
 }
 
-void DicProducer::buildCnDict(const string& stop_words)
+void DicProducer::buildCnDict(const set<string>& stopWords)
 {
     _dict.clear();
-    //加载并清洗中文停用词和_files
-    set<string> _stopWords;
-    ifstream ifs(stop_words);
-    string line;
-    while (std::getline(ifs, line))
-    {
-        if (!line.empty() && line.back() == '\r')
-        {
-            line.pop_back();
-        }
-        _stopWords.insert(line);
-    }
 
     //清洗_files中的\r \n
     vector<string> _clearDic;
@@ -182,7 +156,7 @@ void DicProducer::buildCnDict(const string& stop_words)
         string Word;
         while (isf >> Word)
         {
-            if (_stopWords.find(Word) == _stopWords.end())
+            if (stopWords.find(Word) == stopWords.end())
             {
                 pair<map<string, int>::iterator, bool> p
                                                 = _dict.insert({Word, 1});
@@ -193,7 +167,6 @@ void DicProducer::buildCnDict(const string& stop_words)
             }
         }
     }
-
 }
 
 void DicProducer::createEnIndex()

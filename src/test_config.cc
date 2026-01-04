@@ -4,11 +4,13 @@
 
 int main()
 {
-    Configuration * pConfig = Configuration::createpInstance("../config/config.json");
+    Configuration::setConfigurFilePath("../config/config.json");
+    Configuration * pConfig = Configuration::createpInstance();
 
     std::map<std::string, string> _config = pConfig->getConfig();
-    std::cout << "ip: " << _config["ip"] << "\n";
+    std::cout << "port: " << _config["port"] << "\n";
     std::cout << "En_dict: " << _config["En_dict"] << "\n";
 
-    pConfig->destory();
+    std::set<std::string> stop_words = pConfig->getStopWords();
+
 }

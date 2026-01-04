@@ -1,3 +1,6 @@
+#ifndef _DICTIONARY_H
+#define _DICTIONARY_H
+
 #include "Configuration.h"
 #include <utility>
 #include <vector>
@@ -28,3 +31,5 @@ private:
     Configuration * _config;
 
 };
+
+#endif

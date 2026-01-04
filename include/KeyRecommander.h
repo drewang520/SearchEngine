@@ -1,3 +1,6 @@
+#ifndef _KEY_RECOMMANDER_H
+#define _KEY_RECOMMANDER_H
+
 #include "EventLoop.h"
 #include "Dictionary.h"
 #include <string>
@@ -52,3 +55,4 @@ private:
     unique_ptr<Dictionary> _pDict;
 };
 
+#endif

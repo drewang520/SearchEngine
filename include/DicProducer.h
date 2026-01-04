@@ -1,5 +1,7 @@
+#ifndef _DIC_PRODUCER_H
+#define _DIC_PRODUCER_H
+
 #include "Configuration.h"
-/* #include "Jieba.h" */
 #include <utility>
 #include <vector>
 #include <map>
@@ -15,9 +17,9 @@ using std::map;
 class DicProducer
 {
 public:
-    DicProducer(const string&);
-    void buildEnDict(const string&);
-    void buildCnDict(const string&);
+    DicProducer(const string&, Configuration * pInstance);
+    void buildEnDict(const set<string>& stopWords);
+    void buildCnDict(const set<string>& stopWords);
     void createEnIndex();
     void createCnIndex();
     void storeDict(string savefile);
@@ -35,3 +37,4 @@ private:
     // SplitTool * _cuttor;
 };
 
+#endif

@@ -1,7 +1,11 @@
 {
     "ip" : "127.0.0.1",
-    "port" : "8888",
-    "jieba_dict" : "../raw_data/module1/dict",
+    "port" : 8888,
+    "dict_path" : "../raw_data/module1/dict/jieba.dict.utf8",
+    "model_path" : "../raw_data/module1/dict/hmm_model.utf8",
+    "user_dict_path" : "../raw_data/module1/dict/user.dict.utf8",
+    "idf_path" : "../raw_data/module1/dict/idf.utf8",
+    "stop_word_path" : "../raw_data/module1/dict/stop_words.utf8",
     "En_dict" : "../raw_data/module1/yuliao/english.txt",
     "Cn_dict" : "../raw_data/module1/yuliao/art",
     "dicEn.dat" : "../data/dic_data/dicEn.dat",
