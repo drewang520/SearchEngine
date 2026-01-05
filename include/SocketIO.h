@@ -1,18 +1,14 @@
 #ifndef __SOCKETIO_H__
 #define __SOCKETIO_H__
 
+#include "TLVMessage.h"
 #include <sys/socket.h>
 #include <string>
 
-using std::string;
+/* using tlv = TLV::TLVMessage; */
+/* using tlv_type = TLV::MessageType; */
 
-using Message = struct TlvMessage
-{
-    //TLV
-    size_t messageLength;
-    size_t serverMode;
-    string message;
-};
+using std::string;
 
 class SocketIO
 {

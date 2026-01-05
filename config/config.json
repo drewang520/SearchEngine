@@ -1,6 +1,8 @@
 {
     "ip" : "127.0.0.1",
     "port" : 8888,
+    "threadNums" : 5,
+    "queSize" : 10,
     "dict_path" : "../raw_data/module1/dict/jieba.dict.utf8",
     "model_path" : "../raw_data/module1/dict/hmm_model.utf8",
     "user_dict_path" : "../raw_data/module1/dict/user.dict.utf8",

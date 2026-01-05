@@ -51,7 +51,6 @@ private:
     string _queryWords;
     std::priority_queue<CandidateResult, vector<CandidateResult>, CompareHot> _prique;
     TcpConnectionPtr _conn;
-    Configuration * _config;
     unique_ptr<Dictionary> _pDict;
 };
 

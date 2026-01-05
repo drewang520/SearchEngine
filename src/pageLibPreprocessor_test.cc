@@ -3,9 +3,9 @@
 
 int main()
 {
-    Configuration * config = Configuration::createpInstance("../config/config.json");
+    Configuration::setConfigurFilePath("../config/config.json");
+    Configuration * config = Configuration::createpInstance();
     pageLibPreprocessor page;
     page.buildInvertIndexMap(config->getConfig()["newripepage"], config->getConfig()["newoffset"]);
     page.store(config->getConfig()["invertIndexTable"]);
-    config->destory();
 }

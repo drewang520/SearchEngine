@@ -12,6 +12,9 @@ include_directories(
 #     ${PROJECT_SOURCE_DIR}/src/*.cc
 #     ${PROJECT_SOURCE_DIR}/src/*.cpp
 # )
+add_executable(client
+        src/Configuration.cc
+        src/client.cc)
 
 add_executable(Config_test
         src/Configuration.cc
@@ -56,7 +59,11 @@ add_executable(dictionary
         src/Configuration.cc
     )
 
-add_executable(reactor
+    add_executable(RSserver
+        src/Configuration.cc
+        src/KeyRecommander.cc
+        src/Dictionary.cc
+        src/TLVMessage.cc
         src/Reactor/Acceptor.cc
         src/Reactor/Condition.cc
         src/Reactor/EventLoop.cc
@@ -67,7 +74,7 @@ add_executable(reactor
         src/Reactor/TaskQueue.cc
         src/Reactor/TcpConnection.cc
         src/Reactor/TcpServer.cc
-        src/Reactor/TestReactorv5.cc
+        src/Reactor/TestRSserver.cc
         src/Reactor/Thread.cc
         src/Reactor/ThreadPool.cc
         src/Reactor/Acceptor.cc

@@ -1,6 +1,9 @@
-#ifndef _ECHO_SERVER_H_
-#define _ECHO_SERVER_H_
+#ifndef _RECOMMAND_SEARCH_SERVER_H
+#define _RECOMMAND_SEARCH_SERVER_H
+
 #include "SocketIO.h"
+#include "Configuration.h"
+#include "TLVMessage.h"
 #include "ThreadPool.h"
 #include "TcpServer.h"
 #include "KeyRecommander.h"
@@ -14,9 +17,10 @@ class Mytask
 : public Task
 {
 public:
-    Mytask(const string &msg, const TcpConnectionPtr& con)
+    Mytask(const string &msg, const TcpConnectionPtr& con, Configuration * config)
     : _msg(msg)
     , _con(con)
+    , _config(config)
     {
                   
     }
@@ -29,24 +33,40 @@ public:
     void process() override
     {
         // msg相应的业务逻辑
-        /* _msg.append("drewang"); */
-
+        TLV::TLVMessage message;        
+        message.decodeMessage(_msg);
+        std::cout << "TLV is ok" << "\n";
+        if (message.getType() == TLV::MessageType::KEY_COMMANDER)
+        {
+            KeyRecommander keyrecommander(_msg, _con, _config);
+            vector<string> recommandWords = keyrecommander.doQuery();
+            for (const auto & word : recommandWords)
+            {
+                _msg += word;
+            }
+        }
+        else if (message.getType() == TLV::MessageType::PAGE_SEARCHER)
+        {
+            
+        }
         // 处理完毕后将msg返回给EventLoop进行IO操作
         _con->sendInLoop(_msg);
     }
 
 private:
     string _msg;
-     TcpConnectionPtr _con;
+    TcpConnectionPtr _con;
+    Configuration * _config;
 };
 
 
-class EchoServer
+class RecommandSearchServer
 {
 public:
-    EchoServer(int threadNums, int quesize, const string& ip, unsigned int port)
-    : _threadpool(threadNums, quesize)
-    , _tcpserver(ip, port)
+    RecommandSearchServer(Configuration * config)
+    : _threadpool(stoi(config->getConfig()["threadNums"]), stoi(config->getConfig()["queSize"]))
+    , _tcpserver(config->getConfig()["ip"], stoi(config->getConfig()["port"]))
+    , _config(config)
     {
         
     }
@@ -54,9 +74,9 @@ public:
     void start()
     {
         _threadpool.start();
-        _tcpserver.setAllCallback(std::bind(&EchoServer::ConnectionCallback, this, std::placeholders::_1),
-                                  std::bind(&EchoServer::MessageCallback, this, std::placeholders::_1),
-                                  std::bind(&EchoServer::CloseCallback, this, std::placeholders::_1));
+        _tcpserver.setAllCallback(std::bind(&RecommandSearchServer::ConnectionCallback, this, std::placeholders::_1),
+                                  std::bind(&RecommandSearchServer::MessageCallback, this, std::placeholders::_1),
+                                  std::bind(&RecommandSearchServer::CloseCallback, this, std::placeholders::_1));
         _tcpserver.start();
     }
 
@@ -70,7 +90,7 @@ public:
         string msg = con->recvMsg();
         cout << msg << endl; 
 
-        unique_ptr<Task> task(new Mytask(msg, con));
+        unique_ptr<Task> task(new Mytask(msg, con, _config));
         _threadpool.addTask(std::move(task));
     }
 
@@ -79,7 +99,7 @@ public:
         cout << con->toString() << "has closed!" << endl;
     }
 
-    ~EchoServer()
+    ~RecommandSearchServer()
     {
         _tcpserver.stop();
         _threadpool.stop();
@@ -88,6 +108,7 @@ public:
 private:
     ThreadPool _threadpool;
     TcpServer _tcpserver;
+    Configuration * _config;
 };
 
 #endif

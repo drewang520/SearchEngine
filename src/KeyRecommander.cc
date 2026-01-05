@@ -6,8 +6,7 @@
 KeyRecommander::KeyRecommander(string queryWords, const TcpConnectionPtr& conn, Configuration * config)
 : _queryWords(queryWords)
 , _conn(conn)
-, _config(config)
-, _pDict(new Dictionary(_config))
+, _pDict(new Dictionary(config))
 , _prique()
 {
 
@@ -50,10 +49,10 @@ void KeyRecommander::queryIndex(map<string, int>& ConnectWords, map<string, set<
     map<string, set<int>>::iterator it = index.find(single_ch);
     if (it != index.end())
     {
-        set<int> dic_index = it->second;
-        for (auto elem : dic_index)
+        for (const auto &elem : it->second)
         {
-            ConnectWords.insert({dict[elem].first, dict[elem].second});
+            /* ConnectWords.insert({dict[elem].first, dict[elem].second}); */
+            ConnectWords[dict[elem].first] = dict[elem].second;
         }
     }
 }
@@ -76,21 +75,6 @@ vector<string> KeyRecommander::candidataSort(map<string, int>& ConnectWords, vec
         _prique.pop();
         ++candidataNum;
     }
-    /* set<CandidateResult, CandidateResultCompare>::iterator it; */
-    /* for (it = ConnectWords.begin(); it != ConnectWords.end(); ++it) */
-    /* { */
-    /*     if (candidataNum != 10) */
-    /*     { */
-    /*         _prique.push(*it); */
-    /*         ++candidataNum; */
-    /*     } */
-    /* } */
-
-    /* while (_prique.size() != 0) */
-    /* { */
-    /*     queryResult.push_back(_prique.top()._word); */
-    /*     _prique.pop(); */
-    /* } */
 
     return queryResult;
 }

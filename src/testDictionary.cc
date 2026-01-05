@@ -3,7 +3,8 @@
 
 int main()
 {
-    Configuration * pInstance = Configuration::createpInstance("../config/config.json");
+    Configuration::setConfigurFilePath("../config/config.json");
+    Configuration * pInstance = Configuration::createpInstance();
     Dictionary dic(pInstance);
     dic.getDict();
     dic.getIndex();
