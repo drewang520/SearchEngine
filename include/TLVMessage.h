@@ -30,14 +30,17 @@ public:
 
 
     uint8_t getType();
-    void encodeMessage();
-    void decodeMessage(const string& message);
+    uint16_t getLength();
+    const char * getValue();
+
+    void encodeMessage(char * buf);
+    void decodeMessage(const char * buf);
 private:
-    void Init(uint16_t length, unsigned char * value);
+    void Init(uint16_t length, char * value);
 private:
     uint8_t _type; // 1字节
     uint16_t _length; // 2字节
-    unsigned char * _value;
+    char * _value;
 };
 
 };

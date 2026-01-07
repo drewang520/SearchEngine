@@ -3,13 +3,14 @@
 
 #include "SocketIO.h"
 #include "Configuration.h"
-#include "TLVMessage.h"
+#include "ProtocolParser.h"
 #include "ThreadPool.h"
 #include "TcpServer.h"
 #include "KeyRecommander.h"
 #include <functional>
 #include <iostream>
 
+using namespace Protocol;
 using std::endl;
 using std::cout;
 
@@ -17,10 +18,11 @@ class Mytask
 : public Task
 {
 public:
-    Mytask(const string &msg, const TcpConnectionPtr& con, Configuration * config)
+    Mytask(const Message&msg, const TcpConnectionPtr& con, Configuration * config)
     : _msg(msg)
     , _con(con)
     , _config(config)
+    , _keyCommander(_msg.data, _con, config) 
     {
                   
     }
@@ -33,30 +35,24 @@ public:
     void process() override
     {
         // msg相应的业务逻辑
-        TLV::TLVMessage message;        
-        message.decodeMessage(_msg);
-        std::cout << "TLV is ok" << "\n";
-        if (message.getType() == TLV::MessageType::KEY_COMMANDER)
+        if (_msg.id == 1)
         {
-            KeyRecommander keyrecommander(_msg, _con, _config);
-            vector<string> recommandWords = keyrecommander.doQuery();
-            for (const auto & word : recommandWords)
-            {
-                _msg += word;
-            }
+            _msg.data = ProtocolParser::JsonToString(
+                                  ProtocolParser::vecToJson(_keyCommander.doQuery()));
         }
-        else if (message.getType() == TLV::MessageType::PAGE_SEARCHER)
+        else if (_msg.id == 2)
         {
-            
+
         }
         // 处理完毕后将msg返回给EventLoop进行IO操作
-        _con->sendInLoop(_msg);
+        _con->sendInLoop(_msg.data);
     }
 
 private:
-    string _msg;
+    Message _msg;
     TcpConnectionPtr _con;
     Configuration * _config;
+    KeyRecommander _keyCommander;
 };
 
 
@@ -89,8 +85,10 @@ public:
     {
         string msg = con->recvMsg();
         cout << msg << endl; 
+        Message recvmsg;
+        ProtocolParser::from_json(ProtocolParser::daParse(msg), recvmsg);
 
-        unique_ptr<Task> task(new Mytask(msg, con, _config));
+        unique_ptr<Task> task(new Mytask(recvmsg, con, _config));
         _threadpool.addTask(std::move(task));
     }
 

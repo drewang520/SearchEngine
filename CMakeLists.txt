@@ -14,7 +14,8 @@ include_directories(
 # )
 add_executable(client
         src/Configuration.cc
-        src/client.cc)
+        src/ProtocolParser.cc
+        src/clientTest.cc)
 
 add_executable(Config_test
         src/Configuration.cc
@@ -59,11 +60,11 @@ add_executable(dictionary
         src/Configuration.cc
     )
 
-    add_executable(RSserver
+add_executable(RSserver
         src/Configuration.cc
         src/KeyRecommander.cc
         src/Dictionary.cc
-        src/TLVMessage.cc
+        src/ProtocolParser.cc
         src/Reactor/Acceptor.cc
         src/Reactor/Condition.cc
         src/Reactor/EventLoop.cc

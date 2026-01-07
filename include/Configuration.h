@@ -14,11 +14,10 @@ using std::map;
 class Configuration
 {
 public:
-    static void setConfigurFilePath(const string& config_path);
-    static void setConfigurFilePath(const char * config_path);
     static Configuration * createpInstance();
     map<string, string>& getConfig();
     set<string>& getStopWords();
+    const string& operator[](const string& key);
 
 private:
     static void init();
