@@ -4,7 +4,6 @@
 
 int main()
 {
-    Configuration::setConfigurFilePath("../config/config.json");
     Configuration * pConfig = Configuration::createpInstance();
 
     std::map<std::string, string> _config = pConfig->getConfig();

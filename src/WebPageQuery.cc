@@ -1,6 +1,5 @@
 #include "WebPageSearcher.h"
 #include "cppjieba/Jieba.hpp"
-
 #include <math.h>
 #include <cstddef>
 #include <fstream>
@@ -87,7 +86,7 @@ void WebPageQuery::doQuery(const string& key)
         }
     }
 
-    unordered_map<int, vector<double>> doc_weight;
+    map<int, vector<double>> doc_weight;
     size_t queryLen = clearWords.size();
 
     for (auto elem : clearWords)
@@ -157,7 +156,7 @@ void WebPageQuery::doQuery(const string& key)
     }
 
     std::cout << "doc_weight.size = " << doc_weight.size() << "\n";
-    vector<double> cosins;
+    vector<pair<int, double>> cosins;
     size_t idx = 0;
     /* for (size_t idx = 0; idx < doc_weight.size(); ++idx) */
     for (const auto & [docid, weights] : doc_weight)
@@ -172,25 +171,21 @@ void WebPageQuery::doQuery(const string& key)
             /* std::cout << "cos is ok" << "\n"; */
             weight_mo += (weight_query[i] * weight_query[i]);
         }
-        cosins.emplace_back(cos / (doc_weight_mo[idx] * sqrt(weight_mo)));
+        cosins.push_back({docid, (cos / (doc_weight_mo[idx] * sqrt(weight_mo)))});
         ++idx;
     }
 
     std::cout << "cosins is ok" << "cosins.size = " << cosins.size() << "\n";
-    std::sort(cosins.begin(), cosins.end(), [](double a, double b){
-              return a > b;
+    std::sort(cosins.begin(), cosins.end(), 
+                [](const pair<int, double>& a, const pair<int, double>& b){
+                     return a.second > b.second;
               });
 
-    // test
-    for (const auto &elem : cosins)
+    // 选取余弦值最大的前10个文章并json化传个客户端
+    for (size_t i = 0; i < 10; ++i)
     {
-        std::cout << elem << " ";
+        std::cout << cosins[i].first << " " << cosins[i].second << "\n";
     }
-    // 选取余弦值最大的前10个并json化传个客户端
-    /* for (size_t i = 0; i < 10; ++i) */
-    /* { */
-
-    /* } */
 }
 
 

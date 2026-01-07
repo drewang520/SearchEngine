@@ -3,7 +3,6 @@
 
 int main()
 {
-    Configuration::setConfigurFilePath("../config/config.json");
     Configuration * config = Configuration::createpInstance();
     pageLibPreprocessor page;
     page.buildInvertIndexMap(config->getConfig()["newripepage"], config->getConfig()["newoffset"]);

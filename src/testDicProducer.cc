@@ -3,7 +3,6 @@
 
 int main(int argc, char * argv[])
 {
-    Configuration::setConfigurFilePath("../config/config.json");
     Configuration * pInstance = Configuration::createpInstance();
     map<string, string> config = pInstance->getConfig();
     //英文词典

@@ -10,7 +10,7 @@ using json = nlohmann::json;
 
 Configuration * Configuration::pInstance = nullptr;
 pthread_once_t Configuration::once = PTHREAD_ONCE_INIT;
-string Configuration::_filepath = "";
+string Configuration::_filepath = "../config/config.json";
 
 Configuration::Configuration(const string& config_path)
 {
@@ -36,6 +36,13 @@ Configuration::Configuration(const string& config_path)
 map<string, string>& Configuration::getConfig()
 {
     return _config;
+}
+
+//使用对象直接获取配置文件value，不必先得到_config，方便
+//但是单例提供的是指针，感觉没什么用
+const string& Configuration::operator[](const string& key)
+{
+    return _config.at(key);
 }
 
 set<string>& Configuration::getStopWords()
@@ -65,16 +72,6 @@ Configuration * Configuration::createpInstance()
 {
     pthread_once(&once, init);
     return pInstance;
-}
-
-void Configuration::setConfigurFilePath(const string& config_path)
-{
-    _filepath = config_path;
-}
-
-void Configuration::setConfigurFilePath(const char * config_path)
-{
-    _filepath = config_path;
 }
 
 void Configuration::init()

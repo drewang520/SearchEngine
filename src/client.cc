@@ -22,14 +22,25 @@ int main(int argc, char *argv[])
 
     int ret = connect(sockfd, (struct sockaddr *)&_addr, sizeof(_addr));
     char * buf = new char[4096]();
+    char * netbuf = new char[4096]();
+    char * callback = new char[4096]();
     while (1)
     {
         bzero(buf, 4096);
         scanf("%s\n", buf);
-        
-        TLV::TLVMessage message(0x01);
-        send(sockfd, buf, strlen(buf), 0);
-        int ret = recv(sockfd, buf, sizeof(buf), 0);
-        std::cout << buf << "\n";
+        TLV::TLVMessage message(0x01, strlen(buf), buf);
+        size_t message_length = 1 + 2 + strlen(buf);
+        message.encodeMessage(netbuf);
+        send(sockfd, netbuf, message_length, 0);
+        int ret = recv(sockfd, callback, sizeof(buf), 0);
+        while (ret != 0)
+        {
+            std::cout << callback<< "\n";
+        }
     }
+    delete [] buf;
+    delete [] netbuf;
+    delete [] callback;
+
+    return 0;
 }

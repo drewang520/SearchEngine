@@ -3,7 +3,6 @@
 
 int main()
 {
-    Configuration::setConfigurFilePath("../config/config.json");
     Configuration * config = Configuration::createpInstance();
     PageProducer page(config->getConfig()["page_src"]);
 
