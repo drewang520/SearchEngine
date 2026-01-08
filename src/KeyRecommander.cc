@@ -3,9 +3,8 @@
 #include "EventLoop.h"
 #include <string>
 
-KeyRecommander::KeyRecommander(string queryWords, const TcpConnectionPtr& conn, Configuration * config)
+KeyRecommander::KeyRecommander(string queryWords, Configuration * config)
 : _queryWords(queryWords)
-, _conn(conn)
 , _pDict(new Dictionary(config))
 , _prique()
 {

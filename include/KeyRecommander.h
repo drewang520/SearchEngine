@@ -38,7 +38,7 @@ struct CompareHot
 class KeyRecommander
 {
 public:
-    KeyRecommander(string queryWords, const TcpConnectionPtr& conn, Configuration * config);
+    KeyRecommander(string queryWords, Configuration * config);
     vector<string> doQuery();
 
 private:
@@ -50,7 +50,6 @@ private:
 private:
     string _queryWords;
     std::priority_queue<CandidateResult, vector<CandidateResult>, CompareHot> _prique;
-    TcpConnectionPtr _conn;
     unique_ptr<Dictionary> _pDict;
 };
 

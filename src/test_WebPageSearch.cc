@@ -1,14 +1,15 @@
 #include "WebPageSearcher.h"
 #include "Configuration.h"
-#include <string>
+#include <iostream>
 
 int main()
 {
     Configuration * pConfig = Configuration::createpInstance();
-
-    std::map<std::string, string> _config = pConfig->getConfig();
-
-    WebPageQuery webQuery(pConfig->getConfig()["invertIndexTable"], pConfig->getConfig()["newoffset"]);
-    webQuery.doQuery("雷军是小米集团的董事长");
-
+    WebPageSearch webPageSearch("hello", pConfig);
+    vector<WebPage> webPage =  webPageSearch.doQuery();
+    for (size_t idx = 0; idx < webPage.size() && idx < 10; ++idx)
+    {
+        std::cout << "id = " << webPage[idx].getDocId() << " " << "_title = " << webPage[idx].getTitle() << "\n";  
+    }
+    return 0;
 }

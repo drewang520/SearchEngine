@@ -1,4 +1,5 @@
 #include "ProtocolParser.h"
+#include "WebPage.h"
 
 void Protocol::ProtocolParser::to_json(json & j, const Message& msg)
 {
@@ -30,9 +31,37 @@ json Protocol::ProtocolParser::vecToJson(const vector<string>& recommandWords)
     return json(recommandWords);
 }
 
-void Protocol::ProtocolParser::jsonToVec(const json &j, vector<string> vec)
+void Protocol::ProtocolParser::jsonToVec(const json &j, vector<string>& vec)
 {
     vec.clear();
     vec = j.get<vector<string>>();
+}
+
+void to_json(json & j, const WebPage& web)
+{
+    j = json{{"title", web._title},
+                 {"link", web._link}
+    };
+}
+
+void from_json(const json & j, WebPage& web)
+{
+    j.at("title").get_to(web._title);
+    j.at("link").get_to(web._link);
+}
+
+json Protocol::ProtocolParser::vecWebToJson(const vector<WebPage>& web)
+{
+    if (web.empty())
+    {
+        return json("no found");
+    }
+    return json(web);
+}
+
+void Protocol::ProtocolParser::jsonToVecWeb(const json &j, vector<WebPage>& vec)
+{
+    vec.clear();
+    /* vec = j.get<vector<WebPage>>(); */
 }
 

@@ -1,4 +1,6 @@
+#include "Configuration.h"
 #include "WebPageSearcher.h"
+#include "WebPage.h"
 #include "cppjieba/Jieba.hpp"
 #include <math.h>
 #include <cstddef>
@@ -12,10 +14,24 @@ using std::ifstream;
 using std::istringstream;
 using std::set;
 
-WebPageQuery::WebPageQuery(const string& invertIndex, const string& offsetLib)
+WebPageSearch::WebPageSearch(const string& keyword, Configuration * config)
+: _sought(keyword)
+, _config(config)
 {
-    ifstream ifs1(invertIndex);
-    ifstream ifs2(offsetLib);
+    
+}
+
+vector<WebPage> WebPageSearch::doQuery()
+{
+    WebPageQuery webPageQuery(_config);
+    return webPageQuery.doQuery(_sought);
+}
+
+WebPageQuery::WebPageQuery(Configuration * config)
+: _config(config)
+{
+    ifstream ifs1(_config->getConfig()["invertIndexTable"]);
+    ifstream ifs2(_config->getConfig()["newoffset"]);
     string line;
     string word, docid, weight;
     while (std::getline(ifs1, line))
@@ -49,7 +65,7 @@ WebPageQuery::WebPageQuery(const string& invertIndex, const string& offsetLib)
     /* } */
 }
 
-void WebPageQuery::doQuery(const string& key)
+vector<WebPage> WebPageQuery::doQuery(const string& key)
 {
              
     const char * dict_path = "../raw_data/module1/dict/jieba.dict.utf8";
@@ -73,6 +89,7 @@ void WebPageQuery::doQuery(const string& key)
     }
     
     vector<string> clearWords;
+    std::cout << "key is english" << "\n";
     jieba.Cut(key, words, true);
     for (size_t index = 0; index < words.size(); ++index)
     {
@@ -86,6 +103,7 @@ void WebPageQuery::doQuery(const string& key)
         }
     }
 
+    vector<WebPage> webPage;
     map<int, vector<double>> doc_weight;
     size_t queryLen = clearWords.size();
 
@@ -100,7 +118,9 @@ void WebPageQuery::doQuery(const string& key)
         auto it = _invertIndexLib.find(word);
         if (it == _invertIndexLib.end())
         {
-            continue;
+            std::cout << "key is exzit" << "\n";
+            return {}; 
+            /* continue; */
         }
         for (auto [docid, weight] : it->second)
         {
@@ -133,7 +153,7 @@ void WebPageQuery::doQuery(const string& key)
             ++p.first->second;
         }
     }
-    /* std::cout << "dic_query is ok" << "\n"; */
+    std::cout << "dic_query is ok" << "\n";
     for (size_t idx = 0; idx < clearWords.size(); ++idx)
     {
         size_t docFre = _invertIndexLib[clearWords[idx]].size();
@@ -142,7 +162,7 @@ void WebPageQuery::doQuery(const string& key)
         weight_query[idx] = dic_query[clearWords[idx]] * idf;
         std::cout << weight_query[idx] << "\n";
     }
-    /* std::cout << "weight_query is ok" << "weight_query.size = " << weight_query.size()  << "\n"; */
+    std::cout << "weight_query is ok" << "weight_query.size = " << weight_query.size()  << "\n";
 
     vector<double> doc_weight_mo;
     for (const auto & [docid, weight] : doc_weight)
@@ -182,12 +202,24 @@ void WebPageQuery::doQuery(const string& key)
               });
 
     // 选取余弦值最大的前10个文章并json化传个客户端
-    for (size_t i = 0; i < 10; ++i)
+    ifstream ifs(_config->getConfig()["newripepage"]);    
+    for (size_t i = 0; i < 10 ; ++i)
     {
-        std::cout << cosins[i].first << " " << cosins[i].second << "\n";
+        ifs.seekg(_offsetLib[cosins[i].first].first - 1);
+        char * buf = new char[_offsetLib[cosins[i].first].second + 1]();
+        ifs.read(buf, _offsetLib[cosins[i].first].second);
+        WebPage web(buf);
+        if (!web.getTitle().empty())
+        {
+            webPage.push_back(std::move(web));        
+        }
+        delete [] buf;
     }
+    /* for (size_t idx = 0; idx < webPage.size() && idx < 10; ++idx) */
+    /* { */
+    /*     std::cout << "id = " << webPage[idx].getDocId() << " " << "_title = " << webPage[idx].getTitle() << "\n"; */  
+    /* } */
+    return webPage;
 }
-
-
 
 

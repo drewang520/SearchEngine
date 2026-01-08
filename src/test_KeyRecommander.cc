@@ -11,7 +11,7 @@ int main()
     std::cout << "ip: " << _config["ip"] << "\n";
     std::cout << "En_dict: " << _config["En_dict"] << "\n";
 
-    KeyRecommander keyrecommander("中", nullptr,  pConfig);
+    KeyRecommander keyrecommander("中", pConfig);
     vector<string> commanderWords = keyrecommander.doQuery();
     for (auto word : commanderWords)
     {

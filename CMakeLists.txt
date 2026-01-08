@@ -44,6 +44,8 @@ add_executable(PageProducer_test
 add_executable(WebPageSearch
         src/Configuration.cc
         src/WebPageQuery.cc
+        src/WebPage.cc
+        src/tinyxml2.cpp
         src/test_WebPageSearch.cc
     )
 
@@ -62,8 +64,11 @@ add_executable(dictionary
 
 add_executable(RSserver
         src/Configuration.cc
+        src/tinyxml2.cpp
         src/KeyRecommander.cc
         src/Dictionary.cc
+        src/WebPageQuery.cc
+        src/WebPage.cc
         src/ProtocolParser.cc
         src/Reactor/Acceptor.cc
         src/Reactor/Condition.cc

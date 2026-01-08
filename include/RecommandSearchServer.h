@@ -7,6 +7,7 @@
 #include "ThreadPool.h"
 #include "TcpServer.h"
 #include "KeyRecommander.h"
+#include "WebPageSearcher.h"
 #include <functional>
 #include <iostream>
 
@@ -22,7 +23,8 @@ public:
     : _msg(msg)
     , _con(con)
     , _config(config)
-    , _keyCommander(_msg.data, _con, config) 
+    , _keyCommander(_msg.data,  config) 
+    , _webPageSearch(_msg.data, _config)
     {
                   
     }
@@ -42,7 +44,8 @@ public:
         }
         else if (_msg.id == 2)
         {
-
+            _msg.data = ProtocolParser::JsonToString(
+                                 ProtocolParser::vecWebToJson(_webPageSearch.doQuery()));            
         }
         // 处理完毕后将msg返回给EventLoop进行IO操作
         _con->sendInLoop(_msg.data);
@@ -53,6 +56,7 @@ private:
     TcpConnectionPtr _con;
     Configuration * _config;
     KeyRecommander _keyCommander;
+    WebPageSearch _webPageSearch;
 };
 
 

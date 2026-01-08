@@ -137,10 +137,6 @@ map<string, int>& pageLibPreprocessor::CutClear(const string& content, const cpp
             }
         }
     }
-    /* for (auto elem : clearWords) */
-    /* { */
-    /*     std::cout << "string: " << elem.first << "count: " << elem.second << "\n"; */
-    /* } */
     return clearWords;
 }
 

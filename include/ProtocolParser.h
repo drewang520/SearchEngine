@@ -5,9 +5,14 @@
 #include <string>
 #include <vector>
 
+class WebPage;
+
 using json = nlohmann::json;
 using std::string;
 using std::vector;
+
+void to_json(json & j, const WebPage& web);
+void from_json(const json & j, WebPage& web);
 
 namespace Protocol {
 
@@ -26,7 +31,10 @@ public:
     static json daParse(const string& msg);
     static string JsonToString(const json &j);
     static json vecToJson(const vector<string>& recommandWords);
-    static void jsonToVec(const json &j, vector<string> vec);
+    static void jsonToVec(const json &j, vector<string>& vec);
+
+    static json vecWebToJson(const vector<WebPage>& webPage);
+    static void jsonToVecWeb(const json &j, vector<WebPage>& vec);
 };
 
 };

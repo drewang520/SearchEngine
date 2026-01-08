@@ -44,13 +44,13 @@ void test()
 	printf("conn has connected!...\n");
 
     Message msg;
-    msg.id = 1;
     json j; 
 	while(1) 
     {
 		string line;
 		cout << ">> pls input some message:";
 		getline(cin, line);
+        msg.id = 1;
         msg.data = line;
         msg.length = line.size();
         ProtocolParser::to_json(j, msg);
@@ -78,6 +78,7 @@ void test()
         message.append("\n");
 		send(clientfd, message.data(), message.size(), 0);
 
+        bzero(buff, sizeof(buff));
 		recv(clientfd, buff, sizeof(buff), 0);
 		printf("recv msg from server: %s\n", buff);
 	}
