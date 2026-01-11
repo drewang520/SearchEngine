@@ -1,12 +1,10 @@
 #include "KeyRecommander.h"
-#include "Configuration.h"
-#include "EventLoop.h"
-#include <string>
 
-KeyRecommander::KeyRecommander(string queryWords, Configuration * config)
+KeyRecommander::KeyRecommander(string queryWords, const Configuration * config)
 : _queryWords(queryWords)
 , _pDict(new Dictionary(config))
 , _prique()
+, _config(config)
 {
 
 }
@@ -17,14 +15,14 @@ vector<string> KeyRecommander::doQuery()
     vector<pair<string, int>> dict = _pDict->getDict();
     vector<string> queryResult;
     /* queryResult.reserve(20); */
-    /* set<CandidateResult, CandidateResultCompare> ConnectWords; */
-    map<string, int> ConnectWords;
-    for (size_t i = 0; i < _queryWords.size(); ++i)
+    /* set<CandidateResult, CandidateResultCompare> candidataWords; */
+    map<string, int> candidataWords;
+    for (size_t i = 0; i < _queryWords.size(); )
     {
         if ((_queryWords[i] & 0x80) == 0)
         {
             string singlie_ch = _queryWords.substr(i, 1);
-            queryIndex(ConnectWords, index, dict, singlie_ch);
+            queryIndex(candidataWords, index, dict, singlie_ch);
             ++i;
         }
         else
@@ -35,14 +33,14 @@ vector<string> KeyRecommander::doQuery()
             else if (c >= 0xE0) Cn_length = 3;
             else if (c >= 0xC0) Cn_length = 2;
             string singlie_ch = _queryWords.substr(i, Cn_length);
-            queryIndex(ConnectWords, index, dict, singlie_ch);
+            queryIndex(candidataWords, index, dict, singlie_ch);
             i += Cn_length;
         }
     }
-    return candidataSort(ConnectWords, queryResult);
+    return candidataSort(candidataWords, queryResult);
 }
 
-void KeyRecommander::queryIndex(map<string, int>& ConnectWords, map<string, set<int>>& index, 
+void KeyRecommander::queryIndex(map<string, int>& candidataWords, map<string, set<int>>& index, 
                                     vector<pair<string, int>>& dict, const string& single_ch)
 {
     map<string, set<int>>::iterator it = index.find(single_ch);
@@ -50,25 +48,25 @@ void KeyRecommander::queryIndex(map<string, int>& ConnectWords, map<string, set<
     {
         for (const auto &elem : it->second)
         {
-            /* ConnectWords.insert({dict[elem].first, dict[elem].second}); */
-            ConnectWords[dict[elem].first] = dict[elem].second;
+            /* candidataWords.insert({dict[elem].first, dict[elem].second}); */
+            candidataWords[dict[elem].first] = dict[elem].second;
         }
     }
 }
 
-vector<string> KeyRecommander::candidataSort(map<string, int>& ConnectWords, vector<string>& queryResult)
+vector<string> KeyRecommander::candidataSort(map<string, int>& candidataWords, vector<string>& queryResult)
 {
     CandidateResult canresult;
-    for (auto connectword : ConnectWords)
+    for (const auto& [word, frequency] : candidataWords)
     {
-        canresult._word = connectword.first;
-        canresult._freq = connectword.second;
+        canresult._word = word;
+        canresult._freq = frequency;
         canresult._dist = editDistance(canresult._word, _queryWords);
         _prique.push(canresult);         
     }
 
     size_t candidataNum = 0;
-    while (!_prique.empty() && candidataNum != 10)
+    while (!_prique.empty() && candidataNum != stoi(_config->getConfig().at("candidataNum")))
     {
         queryResult.push_back(_prique.top()._word);
         _prique.pop();

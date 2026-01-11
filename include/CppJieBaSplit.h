@@ -4,40 +4,30 @@
 #include "Configuration.h"
 #include "NoCopyable.h"
 #include "cppjieba/Jieba.hpp"
+#include <utility>
 #include <vector>
 #include <string>
+#include <map>
 
 using std::string;
 using std::vector;
+using std::pair;
+using std::map;
 
 class CppJiebaSplit
 : public NoCopyable
 {
 public:
-    CppJiebaSplit()
-    {
-        Configuration::setConfigurFilePath("../config/config.json");
-        _config = Configuration::createpInstance();
+    CppJiebaSplit(const Configuration * config);
 
-        const char * dict_path = _config->getConfig()["dict_path"].c_str();
-        const char * model_path = _config->getConfig()["model_path"].c_str();
-        const char * user_dict_path = _config->getConfig()["user_dict_path"].c_str();
-        const char * idf_path = _config->getConfig()["idf_path"].c_str();
-        const char * stop_word_path = _config->getConfig()["stop_word_path"].c_str();
-        cppjieba::Jieba jieba(dict_path, model_path, user_dict_path, idf_path, stop_word_path);
-        _jieba = &jieba;
-    }
-
-    vector<string> cut(const string& key)
-    {
-        vector<string> Words; 
-        _jieba->Cut(key, Words, true);
-        return Words;
-    }
+    void cut(const string& key, vector<string>& words);
+    void cut(const string& key, vector<string>& clearWords, const set<string>& stop_words);
+    void cut(const string& key, map<string, int>& words, const set<string>& stop_words);
+    
 
 private:
-    Configuration * _config;
-    cppjieba::Jieba * _jieba;
+    const Configuration * _config;
+    cppjieba::Jieba  _jieba;
 };
 
 #endif

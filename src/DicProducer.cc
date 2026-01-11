@@ -1,10 +1,10 @@
 #include "DicProducer.h"
-#include "cppjieba/Jieba.hpp"
+#include "Configuration.h"
+#include "CppJieBaSplit.h"
 #include <climits>
 #include <cstddef>
 #include <strings.h>
 #include <sys/types.h>
-#include <ctype.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <iostream>
@@ -17,7 +17,8 @@ using std::istringstream;
 using std::ifstream;
 using std::ofstream;
 
-DicProducer::DicProducer(const string& filename, Configuration * pInstance)
+DicProducer::DicProducer(const string& filename, const Configuration * pInstance)
+: _config(pInstance)
 {
     DIR * pdir = opendir(filename.c_str());
     _files.reserve(200);
@@ -46,13 +47,7 @@ DicProducer::DicProducer(const string& filename, Configuration * pInstance)
         _files.clear();
         struct dirent * pdirent;        
         vector<string> words;
-
-        const char * dict_path = pInstance->getConfig()["dict_path"].c_str();
-        const char * model_path = pInstance->getConfig()["model_path"].c_str();
-        const char * user_dict_path = pInstance->getConfig()["user_dict_path"].c_str();
-        const char * idf_path = pInstance->getConfig()["idf_path"].c_str();
-        const char * stop_word_path = pInstance->getConfig()["stop_word_path"].c_str();
-        cppjieba::Jieba jieba(dict_path, model_path, user_dict_path, idf_path, stop_word_path);
+        CppJiebaSplit cppjieba(_config);
 
         char * buf = new char[65550]();
         while ((pdirent = readdir(pdir)) != nullptr)
@@ -63,8 +58,7 @@ DicProducer::DicProducer(const string& filename, Configuration * pInstance)
             std::cout << fileName << "\n";
             ifstream ifs(fileName);
             ifs.read(buf, 65550);
-
-            jieba.Cut(buf, words, true);
+            cppjieba.cut(buf, words);
             if (!words.empty())
             {
                 for (size_t i = 0; i < words.size(); ++i)
@@ -254,3 +248,114 @@ void DicProducer::storeIndex(string savefile)
     ofs.close();
 }
 
+void DicProducer::storeAllDict()
+{
+    ofstream ofs( _config->getConfig().at("dic.dat"));
+    for (const auto& it: _dict2)
+    {
+        ofs << it.first << " " << it.second << "\n";
+    }
+    ofs.close();
+    
+}
+
+void DicProducer::storeALlIndex()
+{
+    ofstream ofs(_config->getConfig().at("dicIndex.dat"));
+    for (const auto& [word, indexs]: _index)
+    {
+        ofs << word << " "; 
+        for (const auto& index : indexs)
+        {
+            ofs << index << " ";
+        }
+        ofs << "\n";
+    }
+    ofs.close();
+}
+
+void DicProducer::buildDictAndIndex()
+{
+    _dict2.clear();
+    _index.clear();
+    string dicEn_path = _config->getConfig().at("dicEn.dat"); //"../data/dicEn.dat";
+    string dicCn_path = _config->getConfig().at("dicCn.dat"); //../data/dicCn.dat";
+    string EnIndex_path = _config->getConfig().at("dicindexEn.dat"); //"../data/dicindexEn.dat";
+    string CnIndex_path = _config->getConfig().at("dicindexCn.dat");// "../data/dicindexCn.dat";
+    vector<string> dic_path = {dicCn_path, dicEn_path};
+    vector<string> Index_path = {CnIndex_path, EnIndex_path};
+
+    size_t Cn_length = 0;
+    for (auto path : dic_path)
+    {
+        ifstream ifs(path);
+        string line;
+        while (std::getline(ifs, line))
+        {
+            istringstream ssf(line);
+            string word;
+            int i = 0;
+            pair<string, int> p;
+            while (ssf >> word)
+            {
+                if (i == 0)
+                {
+                    p.first = word;
+                    i = 1;
+                }
+                else 
+                {
+                    p.second = std::stoi(word);        
+                }
+            }
+            _dict2.push_back(p);
+        }
+        /* std::cout << "_dict.size(): " << _dict.size() << "\n"; */
+        if (path == dicCn_path)
+        {
+            Cn_length += _dict.size();
+            /* std::cout << "Cn_length = " << Cn_length << "\n"; */
+        }
+    }
+
+    for (auto path : Index_path)
+    {
+        ifstream ifs(path);
+        string line;
+        while (std::getline(ifs, line))
+        {
+            istringstream ssf(line);
+            string word;
+            int i = 0;
+            pair<string, set<int>> p;
+            while (ssf >> word)
+            {
+                if (i == 0)
+                {
+                    p.first = word;
+                    i = 1;
+                }
+                else 
+                {
+                    if (path == EnIndex_path)
+                    {
+                        p.second.insert(std::stoi(word) + Cn_length);        
+                    }
+                    else 
+                    {
+                        p.second.insert(std::stoi(word));        
+                    }
+                }
+            }
+            pair<map<string, set<int>>::iterator, bool> P = _index.insert(p);
+            if (! P.second)
+            {
+                for (auto elem : p.second)
+                {
+                    P.first->second.insert(elem);
+                }
+            }
+        }
+    }
+
+}

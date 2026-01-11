@@ -5,7 +5,7 @@ int main()
 {
     Configuration * pInstance = Configuration::createpInstance();
     Dictionary dic(pInstance);
-    dic.getDict();
-    dic.getIndex();
+    /* dic.getDict(); */
+    /* dic.getIndex(); */
     return 0;
 }

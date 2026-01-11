@@ -1,7 +1,7 @@
 #include "Configuration.h"
 #include "WebPageSearcher.h"
+#include "CppJieBaSplit.h"
 #include "WebPage.h"
-#include "cppjieba/Jieba.hpp"
 #include <math.h>
 #include <cstddef>
 #include <fstream>
@@ -14,7 +14,7 @@ using std::ifstream;
 using std::istringstream;
 using std::set;
 
-WebPageSearch::WebPageSearch(const string& keyword, Configuration * config)
+WebPageSearch::WebPageSearch(const string& keyword, const Configuration * config)
 : _sought(keyword)
 , _config(config)
 {
@@ -27,11 +27,11 @@ vector<WebPage> WebPageSearch::doQuery()
     return webPageQuery.doQuery(_sought);
 }
 
-WebPageQuery::WebPageQuery(Configuration * config)
+WebPageQuery::WebPageQuery(const Configuration * config)
 : _config(config)
 {
-    ifstream ifs1(_config->getConfig()["invertIndexTable"]);
-    ifstream ifs2(_config->getConfig()["newoffset"]);
+    ifstream ifs1(_config->getConfig().at("invertIndexTable"));
+    ifstream ifs2(_config->getConfig().at("newoffset"));
     string line;
     string word, docid, weight;
     while (std::getline(ifs1, line))
@@ -53,57 +53,17 @@ WebPageQuery::WebPageQuery(Configuration * config)
             _offsetLib[stoi(docid)].second= stoi(offset);
         }
     }
-    //test
-    /* for (const auto & [word, position]: _invertIndexLib) */
-    /* { */
-    /*     std::cout << word << " "; */
-    /*     for (const auto & [docid, weight] : position) */
-    /*     { */
-    /*         std::cout << docid << " " << weight << " "; */
-    /*     } */
-    /*     std::cout << "\n"; */
-    /* } */
 }
 
 vector<WebPage> WebPageQuery::doQuery(const string& key)
 {
-             
-    const char * dict_path = "../raw_data/module1/dict/jieba.dict.utf8";
-    const char * model_path = "../raw_data/module1/dict/hmm_model.utf8";
-    const char * user_dict_path = "../raw_data/module1/dict/user.dict.utf8";
-    const char * idf_path = "../raw_data/module1/dict/idf.utf8";
-    const char * stop_word_path = "../raw_data/module1/dict/stop_words.utf8";
-    cppjieba::Jieba jieba(dict_path, model_path, user_dict_path, idf_path, stop_word_path);
-
-    vector<string> words;
-    set<string> _stopWords;
-    ifstream ifs3(stop_word_path);
-    string line;
-    while (std::getline(ifs3, line))
-    {
-        if (!line.empty() && line.back() == '\r')
-        {
-            line.pop_back();
-        }
-        _stopWords.insert(line);
-    }
-    
+    set<string> stopWords = _config->getStopWords();
     vector<string> clearWords;
-    std::cout << "key is english" << "\n";
-    jieba.Cut(key, words, true);
-    for (size_t index = 0; index < words.size(); ++index)
-    {
-        if (!words[index].empty() && words[index].back() == '\r' || words[index].back() == '\n')
-        {
-            words[index].pop_back();
-        }
-        if (_stopWords.find(words[index]) == _stopWords.end())
-        {
-            clearWords.push_back(words[index]);
-        }
-    }
-
     vector<WebPage> webPage;
+
+    CppJiebaSplit cppjieba(_config);
+    cppjieba.cut(key, clearWords, stopWords);
+
     map<int, vector<double>> doc_weight;
     size_t queryLen = clearWords.size();
 
@@ -131,16 +91,7 @@ vector<WebPage> WebPageQuery::doQuery(const string& key)
             doc_weight[docid][idx] = weight;
         }
     }
-    // test
-    /* for (const auto & [docid, weights] : doc_weight) */
-    /* { */
-    /*     std::cout << docid << " "; */
-    /*     for (auto elem : weights) */
-    /*     { */
-    /*         std::cout << elem << " "; */
-    /*     } */
-    /*     std::cout << "\n"; */
-    /* } */
+
     //计算查询词的权重向量
     size_t pageNum = _offsetLib.size();
     map<string, int> dic_query;
@@ -202,8 +153,8 @@ vector<WebPage> WebPageQuery::doQuery(const string& key)
               });
 
     // 选取余弦值最大的前10个文章并json化传个客户端
-    ifstream ifs(_config->getConfig()["newripepage"]);    
-    for (size_t i = 0; i < 10 ; ++i)
+    ifstream ifs(_config->getConfig().at("newripepage"));    
+    for (size_t i = 0; i < stoi(_config->getConfig().at("queryWebPageNum")); ++i)
     {
         ifs.seekg(_offsetLib[cosins[i].first].first - 1);
         char * buf = new char[_offsetLib[cosins[i].first].second + 1]();

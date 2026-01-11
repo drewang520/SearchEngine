@@ -31,9 +31,10 @@ Configuration::Configuration(const string& config_path)
         }
     }
     delete [] buf;
+    LoadStopWords();
 }
 
-map<string, string>& Configuration::getConfig()
+const map<string, string>& Configuration::getConfig() const
 {
     return _config;
 }
@@ -45,10 +46,10 @@ const string& Configuration::operator[](const string& key)
     return _config.at(key);
 }
 
-set<string>& Configuration::getStopWords()
+void Configuration::LoadStopWords()
 {
-    ifstream ifs1(_config["stop_words_en"]);
-    ifstream ifs2(_config["stop_words_cn"]);
+    ifstream ifs1(_config.at("stop_words_en"));
+    ifstream ifs2(_config.at("stop_words_cn"));
     string line;
     while (std::getline(ifs1, line))
     {
@@ -65,6 +66,10 @@ set<string>& Configuration::getStopWords()
         _stopWords.insert(line);
     }
     /* std::cout << "_stopWords.size = " << _stopWords.size() << "\n"; */
+}
+
+const set<string>& Configuration::getStopWords() const
+{
     return _stopWords;
 }
 

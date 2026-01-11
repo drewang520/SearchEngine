@@ -3,6 +3,8 @@
     "port" : 8888,
     "threadNums" : 5,
     "queSize" : 10,
+    "candidataNum" : 10,
+    "queryWebPageNum" : 10,
     "dict_path" : "../raw_data/module1/dict/jieba.dict.utf8",
     "model_path" : "../raw_data/module1/dict/hmm_model.utf8",
     "user_dict_path" : "../raw_data/module1/dict/user.dict.utf8",
@@ -17,6 +19,8 @@
     "stop_words_en" : "../raw_data/module1/yuliao/stop-words-list/stop_words_eng.txt",
     "stop_words_cn" : "../raw_data/module1/yuliao/stop-words-list/stop_words_zh.txt",
 
+    "dic.dat" : "../data/dic_data/dic.dat",
+    "dicIndex.dat" : "../data/dic_data/dicIndex.dat",
     "page_src" : "../raw_data/module2/people_yuliao",
     "ripepage" : "../data/page_data/ripepage.dat",
     "pageoffset" : "../data/page_data/pageoffset.dat",

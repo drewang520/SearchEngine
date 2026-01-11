@@ -1,15 +1,12 @@
 #ifndef _KEY_RECOMMANDER_H
 #define _KEY_RECOMMANDER_H
 
-#include "EventLoop.h"
 #include "Dictionary.h"
 #include <string>
 #include <queue>
 #include <vector>
 #include <memory>
 
-class TcpConnection;
-class Configuration;
 
 using std::vector;
 using std::unique_ptr;
@@ -38,7 +35,7 @@ struct CompareHot
 class KeyRecommander
 {
 public:
-    KeyRecommander(string queryWords, Configuration * config);
+    KeyRecommander(string queryWords, const Configuration * config);
     vector<string> doQuery();
 
 private:
@@ -49,8 +46,9 @@ private:
 
 private:
     string _queryWords;
-    std::priority_queue<CandidateResult, vector<CandidateResult>, CompareHot> _prique;
+    priority_queue<CandidateResult, vector<CandidateResult>, CompareHot> _prique;
     unique_ptr<Dictionary> _pDict;
+    const Configuration * _config;
 };
 
 #endif

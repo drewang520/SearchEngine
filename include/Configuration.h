@@ -15,13 +15,14 @@ class Configuration
 {
 public:
     static Configuration * createpInstance();
-    map<string, string>& getConfig();
-    set<string>& getStopWords();
+    const map<string, string>& getConfig() const;
+    const set<string>& getStopWords() const;
     const string& operator[](const string& key);
 
 private:
     static void init();
     static void destory();
+    void LoadStopWords();
 
     Configuration(const string& config_path);
     Configuration(const Configuration& config) = delete;

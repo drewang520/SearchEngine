@@ -8,8 +8,8 @@ int main()
     Configuration * pConfig = Configuration::createpInstance();
 
     std::map<std::string, string> _config = pConfig->getConfig();
-    std::cout << "ip: " << _config["ip"] << "\n";
-    std::cout << "En_dict: " << _config["En_dict"] << "\n";
+    std::cout << "ip: " << _config.at("ip") << "\n";
+    std::cout << "En_dict: " << _config.at("En_dict") << "\n";
 
     KeyRecommander keyrecommander("中", pConfig);
     vector<string> commanderWords = keyrecommander.doQuery();

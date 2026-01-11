@@ -9,8 +9,8 @@ using std::string;
 
 class WebPage
 {
-    friend void to_json(json & j, const WebPage& web);
-    friend void from_json(const json & j, WebPage& web);
+    friend void Protocol::ProtocolParser::to_json(json & j, const WebPage& web);
+    friend void Protocol::ProtocolParser::from_json(const json & j, WebPage& web);
 
 public:
     WebPage(const string& doc);

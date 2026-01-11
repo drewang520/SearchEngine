@@ -24,12 +24,14 @@ add_executable(Config_test
 add_executable(dicProducer 
         src/DicProducer.cc
         src/testDicProducer.cc
+        src/CppJiebaSplit.cc
         src/Configuration.cc
     )
 
 add_executable(pageLibPreprocessor_test
         src/Configuration.cc
         src/tinyxml2.cpp
+        src/CppJiebaSplit.cc
         src/Optimize_pageLibPreprocessor.cc
         src/pageLibPreprocessor_test.cc
     )
@@ -44,6 +46,7 @@ add_executable(PageProducer_test
 add_executable(WebPageSearch
         src/Configuration.cc
         src/WebPageQuery.cc
+        src/CppJiebaSplit.cc
         src/WebPage.cc
         src/tinyxml2.cpp
         src/test_WebPageSearch.cc
@@ -69,6 +72,7 @@ add_executable(RSserver
         src/Dictionary.cc
         src/WebPageQuery.cc
         src/WebPage.cc
+        src/CppJiebaSplit.cc
         src/ProtocolParser.cc
         src/Reactor/Acceptor.cc
         src/Reactor/Condition.cc

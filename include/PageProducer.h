@@ -1,6 +1,7 @@
 #ifndef _PAGE_PRODUCER_H
 #define _PAGE_PRODUCER_H
 
+#include "Configuration.h"
 #include <vector>
 #include <string>
 #include <map>
@@ -20,14 +21,17 @@ struct RSSItem
 class PageProducer
 {
 public:
-    PageProducer(const string& pagePath);
+    PageProducer(const Configuration * config);
+    void store();
+    void pageDeduplicat();
+
+private:
     void create(const string& filepath, const string& filename);
-    void store(const string& savePageFile, const string& saveOffsetFile);
-    void pageDeduplicat(const string& deDupPageLib, const string& deDupIndexLib);
 
 private:
     vector<RSSItem> _page;
     map<int, pair<int, int>> _offsetPage;
+    const Configuration * _config;
 };
 
 #endif

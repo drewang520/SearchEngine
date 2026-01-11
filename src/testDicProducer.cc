@@ -19,5 +19,9 @@ int main(int argc, char * argv[])
     producer2.createCnIndex();
     producer2.storeIndex(config["dicindexCn.dat"]);
 
+    producer.buildDictAndIndex();
+    producer.storeAllDict();
+    producer.storeALlIndex();
+
     return 0;
 }

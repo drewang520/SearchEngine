@@ -1,4 +1,5 @@
 #include "PageProducer.h"
+#include "Configuration.h"
 #include "simhash/Simhasher.hpp"
 #include "tinyxml2.h"
 #include <cstddef>
@@ -12,8 +13,10 @@
 using namespace tinyxml2;
 using namespace simhash;
 
-PageProducer::PageProducer(const string& pagePath)
+PageProducer::PageProducer(const Configuration * config)
+: _config(config)
 {
+    const string pagePath = _config->getConfig().at("page_src");
     DIR * pdir = opendir(pagePath.c_str());
     if (pdir != nullptr)
     {
@@ -68,10 +71,10 @@ void PageProducer::create(const string& filepath, const string& filename)
     }
 }
 
-void PageProducer::store(const string& savePageFile, const string& saveOffsetFile)
+void PageProducer::store()
 {
-    std::ofstream ofs(savePageFile);        
-    std::ofstream ofs2(saveOffsetFile);
+    std::ofstream ofs(_config->getConfig().at("ripepage"));        
+    std::ofstream ofs2(_config->getConfig().at("pageoffset"));
     int prepos = 0;
     int pos = 0;
     int length = 0;
@@ -99,14 +102,14 @@ void PageProducer::store(const string& savePageFile, const string& saveOffsetFil
     ofs2.close();
 }
 
-void PageProducer::pageDeduplicat(const string& deDupPageLib, const string& deDupIndexLib)
+void PageProducer::pageDeduplicat()
 {
     vector<uint64_t> simhash;
     vector<RSSItem> tmpRSSItem;
-    const char * dicpath = "../raw_data/module1/dict/jieba.dict.utf8";
-    const char * modelpath = "../raw_data/module1/dict/hmm_model.utf8";
-    const char * idfpath = "../raw_data/module1/dict/idf.utf8";
-    const char * stopwords = "../raw_data/module1/dict/stop_words.utf8";
+    const char * dicpath = _config->getConfig().at("dict_path").c_str();
+    const char * modelpath = _config->getConfig().at("model_path").c_str();
+    const char * idfpath = _config->getConfig().at("idf_path").c_str();
+    const char * stopwords = _config->getConfig().at("stop_word_path").c_str();
 
     Simhasher simhasher(dicpath, modelpath, idfpath, stopwords);    
     uint64_t value;
@@ -118,6 +121,7 @@ void PageProducer::pageDeduplicat(const string& deDupPageLib, const string& deDu
         simhash.push_back(value);
     }
 
+    // simhash时间复杂度 O(N * N)
     set<int> index;
     for (size_t i = 0; i < simhash.size(); ++i)
     {
@@ -130,8 +134,8 @@ void PageProducer::pageDeduplicat(const string& deDupPageLib, const string& deDu
         }
     }
 
-    std::ofstream ofs(deDupPageLib);
-    std::ofstream ofs2(deDupIndexLib);
+    std::ofstream ofs(_config->getConfig().at("newripepage"));
+    std::ofstream ofs2(_config->getConfig().at("newoffset"));
     size_t number = 0;
     int prepos = 0;
     int pos = 0;

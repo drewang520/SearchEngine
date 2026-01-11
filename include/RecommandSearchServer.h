@@ -1,8 +1,8 @@
 #ifndef _RECOMMAND_SEARCH_SERVER_H
 #define _RECOMMAND_SEARCH_SERVER_H
 
-#include "SocketIO.h"
 #include "Configuration.h"
+#include "SocketIO.h"
 #include "ProtocolParser.h"
 #include "ThreadPool.h"
 #include "TcpServer.h"
@@ -19,11 +19,11 @@ class Mytask
 : public Task
 {
 public:
-    Mytask(const Message&msg, const TcpConnectionPtr& con, Configuration * config)
+    Mytask(const Message&msg, const TcpConnectionPtr& con, const Configuration * config)
     : _msg(msg)
     , _con(con)
     , _config(config)
-    , _keyCommander(_msg.data,  config) 
+    , _keyCommander(_msg.data,  _config) 
     , _webPageSearch(_msg.data, _config)
     {
                   
@@ -54,7 +54,7 @@ public:
 private:
     Message _msg;
     TcpConnectionPtr _con;
-    Configuration * _config;
+    const Configuration * _config;
     KeyRecommander _keyCommander;
     WebPageSearch _webPageSearch;
 };
@@ -63,9 +63,9 @@ private:
 class RecommandSearchServer
 {
 public:
-    RecommandSearchServer(Configuration * config)
-    : _threadpool(stoi(config->getConfig()["threadNums"]), stoi(config->getConfig()["queSize"]))
-    , _tcpserver(config->getConfig()["ip"], stoi(config->getConfig()["port"]))
+    RecommandSearchServer(const Configuration * config)
+    : _threadpool(stoi(config->getConfig().at("threadNums")), stoi(config->getConfig().at("queSize")))
+    , _tcpserver(config->getConfig().at("ip"), stoi(config->getConfig().at("port")))
     , _config(config)
     {
         
@@ -90,7 +90,7 @@ public:
         string msg = con->recvMsg();
         cout << msg << endl; 
         Message recvmsg;
-        ProtocolParser::from_json(ProtocolParser::daParse(msg), recvmsg);
+        ProtocolParser::from_json(ProtocolParser::doParse(msg), recvmsg);
 
         unique_ptr<Task> task(new Mytask(recvmsg, con, _config));
         _threadpool.addTask(std::move(task));
@@ -110,7 +110,7 @@ public:
 private:
     ThreadPool _threadpool;
     TcpServer _tcpserver;
-    Configuration * _config;
+    const Configuration * _config;
 };
 
 #endif

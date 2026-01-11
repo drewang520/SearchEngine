@@ -21,7 +21,7 @@ string Protocol::ProtocolParser::JsonToString(const json &j)
     return j.dump();
 }
 
-json Protocol::ProtocolParser::daParse(const string& msg)
+json Protocol::ProtocolParser::doParse(const string& msg)
 {
     return json::parse(msg);
 }
@@ -37,14 +37,14 @@ void Protocol::ProtocolParser::jsonToVec(const json &j, vector<string>& vec)
     vec = j.get<vector<string>>();
 }
 
-void to_json(json & j, const WebPage& web)
+void Protocol::ProtocolParser::to_json(json & j, const WebPage& web)
 {
     j = json{{"title", web._title},
                  {"link", web._link}
     };
 }
 
-void from_json(const json & j, WebPage& web)
+void Protocol::ProtocolParser::from_json(const json & j, WebPage& web)
 {
     j.at("title").get_to(web._title);
     j.at("link").get_to(web._link);
@@ -56,12 +56,22 @@ json Protocol::ProtocolParser::vecWebToJson(const vector<WebPage>& web)
     {
         return json("no found");
     }
-    return json(web);
+    json j1;
+    for (const auto &web : web)
+    {
+        json j;
+        to_json(j, web);
+        j1.push_back(j);
+    }
+    return j1;
 }
 
 void Protocol::ProtocolParser::jsonToVecWeb(const json &j, vector<WebPage>& vec)
 {
     vec.clear();
-    /* vec = j.get<vector<WebPage>>(); */
+    for (auto &web : vec)
+    {
+        from_json(j, web);
+    }
 }
 
