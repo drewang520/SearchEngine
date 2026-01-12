@@ -40,7 +40,7 @@ public:
 
 private:
     int editDistance(const string&, const string&);
-    vector<string> candidataSort(map<string, int>&, vector<string>&);
+    void candidataSort(map<string, int>&, vector<string>&);
     void queryIndex(map<string, int>& ,map<string ,set<int>>&, 
                         vector<pair<string, int>>&, const string&);
 

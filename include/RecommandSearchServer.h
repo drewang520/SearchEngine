@@ -26,7 +26,7 @@ public:
     , _keyCommander(_msg.data,  _config) 
     , _webPageSearch(_msg.data, _config)
     {
-                  
+                            
     }
 
     ~Mytask()
@@ -37,13 +37,15 @@ public:
     void process() override
     {
         // msg相应的业务逻辑
-        if (_msg.id == 1)
+        if (_msg.id == Protocol::KEY_RECOMMAND)
         {
+            std::cout << "KEY_RECOMMAND: " << "\n";
             _msg.data = ProtocolParser::JsonToString(
                                   ProtocolParser::vecToJson(_keyCommander.doQuery()));
         }
-        else if (_msg.id == 2)
+        else if (_msg.id == Protocol::WEBPAGE_SEARCH)
         {
+            std::cout << "WEBPAGE_SEARCH: " << "\n";
             _msg.data = ProtocolParser::JsonToString(
                                  ProtocolParser::vecWebToJson(_webPageSearch.doQuery()));            
         }
@@ -91,7 +93,7 @@ public:
         cout << msg << endl; 
         Message recvmsg;
         ProtocolParser::from_json(ProtocolParser::doParse(msg), recvmsg);
-
+        
         unique_ptr<Task> task(new Mytask(recvmsg, con, _config));
         _threadpool.addTask(std::move(task));
     }

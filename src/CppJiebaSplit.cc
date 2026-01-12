@@ -8,19 +8,20 @@ CppJiebaSplit::CppJiebaSplit(const Configuration * config)
 {
 
 }
-void CppJiebaSplit::cut(const string& key, vector<string>& words)
-{
-    _jieba.Cut(key, words, true);
-}
+/* void CppJiebaSplit::cut(const string& key, vector<string>& words) */
+/* { */
+/*     _jieba.Cut(key, words, true); */
+/* } */
 
 void CppJiebaSplit::cut(const string& key, vector<string>& clearWords, const set<string>& stop_words)
 {
     vector<string> words;
-    _jieba.Cut(key, words, true);
+    /* _jieba.Cut(key, words, true); */
+    _jieba.CutAll(key, words);
 
     for (auto & word : words)
     {
-        if (! word.empty() && word.back() == '\r' || word.back() == '\n')
+        if (! word.empty() && (word.back() == '\r' || word.back() == '\n'))
         {
             word.pop_back();
         }
@@ -34,7 +35,8 @@ void CppJiebaSplit::cut(const string& key, vector<string>& clearWords, const set
 void CppJiebaSplit::cut(const string& key, map<string, int>& clearWords, const set<string>& stop_words)
 {
     vector<string> words;
-    _jieba.Cut(key, words, true);
+    /* _jieba.Cut(key, words, true); */
+    _jieba.CutAll(key, words);
     for (auto & word : words)
     {
         if (!word.empty() && word.back() == '\r' || word.back() == '\n')

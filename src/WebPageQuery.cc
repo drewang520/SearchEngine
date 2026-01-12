@@ -1,12 +1,9 @@
-#include "Configuration.h"
 #include "WebPageSearcher.h"
 #include "CppJieBaSplit.h"
-#include "WebPage.h"
 #include <math.h>
 #include <cstddef>
 #include <fstream>
 #include <sstream>
-#include <string>
 #include <set>
 #include <algorithm>
 
@@ -18,7 +15,7 @@ WebPageSearch::WebPageSearch(const string& keyword, const Configuration * config
 : _sought(keyword)
 , _config(config)
 {
-    
+  
 }
 
 vector<WebPage> WebPageSearch::doQuery()
@@ -63,7 +60,11 @@ vector<WebPage> WebPageQuery::doQuery(const string& key)
 
     CppJiebaSplit cppjieba(_config);
     cppjieba.cut(key, clearWords, stopWords);
-
+    if (clearWords.empty())
+    {
+        std::cout << "the word is stopWords" << "\n";
+        return {};
+    }
     map<int, vector<double>> doc_weight;
     size_t queryLen = clearWords.size();
 
@@ -71,7 +72,8 @@ vector<WebPage> WebPageQuery::doQuery(const string& key)
     {
         std::cout << elem << " ";
     }
-    std::cout << "\n" << "queryLen = " << queryLen << "\n";
+    std::cout << "\n";
+    /* std::cout << "\n" << "queryLen = " << queryLen << "\n"; */
     for (size_t idx = 0; idx < clearWords.size(); ++idx)
     {
         const string& word = clearWords[idx];
@@ -104,16 +106,16 @@ vector<WebPage> WebPageQuery::doQuery(const string& key)
             ++p.first->second;
         }
     }
-    std::cout << "dic_query is ok" << "\n";
+    /* std::cout << "dic_query is ok" << "\n"; */
     for (size_t idx = 0; idx < clearWords.size(); ++idx)
     {
         size_t docFre = _invertIndexLib[clearWords[idx]].size();
         size_t termFre = dic_query[clearWords[idx]];
         double idf = log2(pageNum / (docFre + 1));
         weight_query[idx] = dic_query[clearWords[idx]] * idf;
-        std::cout << weight_query[idx] << "\n";
+        /* std::cout << weight_query[idx] << "\n"; */
     }
-    std::cout << "weight_query is ok" << "weight_query.size = " << weight_query.size()  << "\n";
+    /* std::cout << "weight_query is ok" << "weight_query.size = " << weight_query.size()  << "\n"; */
 
     vector<double> doc_weight_mo;
     for (const auto & [docid, weight] : doc_weight)
@@ -126,27 +128,24 @@ vector<WebPage> WebPageQuery::doQuery(const string& key)
         doc_weight_mo.push_back(sqrt(powNum));
     }
 
-    std::cout << "doc_weight.size = " << doc_weight.size() << "\n";
+    /* std::cout << "doc_weight.size = " << doc_weight.size() << "\n"; */
+    // 计算余弦相似度
     vector<pair<int, double>> cosins;
     size_t idx = 0;
-    /* for (size_t idx = 0; idx < doc_weight.size(); ++idx) */
     for (const auto & [docid, weights] : doc_weight)
     {
         double cos = 0.0;
         double weight_mo = 0.0;
-        /* std::cout << "cos is ok" << "\n"; */
         for (size_t i = 0; i < weight_query.size(); ++i)
         {
-            /* std::cout << "doc_weight[idx][i] = " << weights[i] << "\n"; */
             cos += (weights[i] * weight_query[i]);
-            /* std::cout << "cos is ok" << "\n"; */
             weight_mo += (weight_query[i] * weight_query[i]);
         }
         cosins.push_back({docid, (cos / (doc_weight_mo[idx] * sqrt(weight_mo)))});
         ++idx;
     }
 
-    std::cout << "cosins is ok" << "cosins.size = " << cosins.size() << "\n";
+    /* std::cout << "cosins is ok" << "cosins.size = " << cosins.size() << "\n"; */
     std::sort(cosins.begin(), cosins.end(), 
                 [](const pair<int, double>& a, const pair<int, double>& b){
                      return a.second > b.second;
@@ -166,10 +165,6 @@ vector<WebPage> WebPageQuery::doQuery(const string& key)
         }
         delete [] buf;
     }
-    /* for (size_t idx = 0; idx < webPage.size() && idx < 10; ++idx) */
-    /* { */
-    /*     std::cout << "id = " << webPage[idx].getDocId() << " " << "_title = " << webPage[idx].getTitle() << "\n"; */  
-    /* } */
     return webPage;
 }
 

@@ -1,4 +1,5 @@
 #include "KeyRecommander.h"
+#include <iostream>
 
 KeyRecommander::KeyRecommander(string queryWords, const Configuration * config)
 : _queryWords(queryWords)
@@ -11,12 +12,11 @@ KeyRecommander::KeyRecommander(string queryWords, const Configuration * config)
 
 vector<string> KeyRecommander::doQuery()
 {
+    std::cout << "Start query >: " << "\n";
     map<string, set<int>> index = _pDict->getIndex();
     vector<pair<string, int>> dict = _pDict->getDict();
-    vector<string> queryResult;
-    /* queryResult.reserve(20); */
-    /* set<CandidateResult, CandidateResultCompare> candidataWords; */
-    map<string, int> candidataWords;
+    vector<string> queryResult = {};
+    map<string, int> candidataWords = {};
     for (size_t i = 0; i < _queryWords.size(); )
     {
         if ((_queryWords[i] & 0x80) == 0)
@@ -37,7 +37,8 @@ vector<string> KeyRecommander::doQuery()
             i += Cn_length;
         }
     }
-    return candidataSort(candidataWords, queryResult);
+    candidataSort(candidataWords, queryResult);
+    return queryResult;
 }
 
 void KeyRecommander::queryIndex(map<string, int>& candidataWords, map<string, set<int>>& index, 
@@ -46,15 +47,14 @@ void KeyRecommander::queryIndex(map<string, int>& candidataWords, map<string, se
     map<string, set<int>>::iterator it = index.find(single_ch);
     if (it != index.end())
     {
-        for (const auto &elem : it->second)
+        for (auto &elem : it->second)
         {
-            /* candidataWords.insert({dict[elem].first, dict[elem].second}); */
             candidataWords[dict[elem].first] = dict[elem].second;
         }
     }
 }
 
-vector<string> KeyRecommander::candidataSort(map<string, int>& candidataWords, vector<string>& queryResult)
+void KeyRecommander::candidataSort(map<string, int>& candidataWords, vector<string>& queryResult)
 {
     CandidateResult canresult;
     for (const auto& [word, frequency] : candidataWords)
@@ -72,8 +72,6 @@ vector<string> KeyRecommander::candidataSort(map<string, int>& candidataWords, v
         _prique.pop();
         ++candidataNum;
     }
-
-    return queryResult;
 }
 
 size_t nBytesCode(const char ch)

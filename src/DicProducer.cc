@@ -1,5 +1,4 @@
 #include "DicProducer.h"
-#include "Configuration.h"
 #include "CppJieBaSplit.h"
 #include <climits>
 #include <cstddef>
@@ -8,10 +7,8 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <iostream>
-#include <string>
 #include <fstream>
 #include <sstream>
-#include <vector>
 
 using std::istringstream;
 using std::ifstream;
@@ -20,6 +17,7 @@ using std::ofstream;
 DicProducer::DicProducer(const string& filename, const Configuration * pInstance)
 : _config(pInstance)
 {
+    set<string> stopWords = _config->getStopWords();
     DIR * pdir = opendir(filename.c_str());
     _files.reserve(200);
     if (pdir == nullptr)
@@ -46,24 +44,24 @@ DicProducer::DicProducer(const string& filename, const Configuration * pInstance
         // 该路径为目录, 处理中文
         _files.clear();
         struct dirent * pdirent;        
-        vector<string> words;
+        vector<string> clearWords;
         CppJiebaSplit cppjieba(_config);
 
         char * buf = new char[65550]();
         while ((pdirent = readdir(pdir)) != nullptr)
         {
-            words.clear();
+            clearWords.clear();
             bzero(buf, 65550);
             string fileName = filename + '/' + pdirent->d_name;
             std::cout << fileName << "\n";
             ifstream ifs(fileName);
             ifs.read(buf, 65550);
-            cppjieba.cut(buf, words);
-            if (!words.empty())
+            cppjieba.cut(buf, clearWords, stopWords);
+            if (!clearWords.empty())
             {
-                for (size_t i = 0; i < words.size(); ++i)
+                for (size_t i = 0; i < clearWords.size(); ++i)
                 {
-                    _files.push_back(words[i]);
+                    _files.push_back(clearWords[i]);
                 }
             }
             /* std::cout << "buf.strlen = " << strlen(buf) << "\n"; */
@@ -131,34 +129,20 @@ void DicProducer::buildEnDict(const set<string>& stopWords)
 void DicProducer::buildCnDict(const set<string>& stopWords)
 {
     _dict.clear();
-
-    //清洗_files中的\r \n
-    vector<string> _clearDic;
-    for (size_t index = 0; index < _files.size(); ++index)
-    {
-        if (!_files[index].empty() && _files[index].back() == '\r' || _files[index].back() == '\n')
-        {
-            _files[index].pop_back();
-        }
-        _clearDic.push_back(_files[index]);
-    }
     
     //构造中文词典
-    for (auto word : _clearDic)
+    for (auto word : _files)
     {
         istringstream isf(word);
         string Word;
         while (isf >> Word)
         {
-            if (stopWords.find(Word) == stopWords.end())
-            {
-                pair<map<string, int>::iterator, bool> p
-                                                = _dict.insert({Word, 1});
-                if (!p.second)
-                {
-                    ++p.first->second;
-                }
-            }
+             pair<map<string, int>::iterator, bool> p
+                                            = _dict.insert({Word, 1});
+             if (!p.second)
+             {
+                ++p.first->second;
+             }
         }
     }
 }
@@ -310,11 +294,9 @@ void DicProducer::buildDictAndIndex()
             }
             _dict2.push_back(p);
         }
-        /* std::cout << "_dict.size(): " << _dict.size() << "\n"; */
         if (path == dicCn_path)
         {
-            Cn_length += _dict.size();
-            /* std::cout << "Cn_length = " << Cn_length << "\n"; */
+            Cn_length += _dict2.size();
         }
     }
 
@@ -348,13 +330,6 @@ void DicProducer::buildDictAndIndex()
                 }
             }
             pair<map<string, set<int>>::iterator, bool> P = _index.insert(p);
-            if (! P.second)
-            {
-                for (auto elem : p.second)
-                {
-                    P.first->second.insert(elem);
-                }
-            }
         }
     }
 

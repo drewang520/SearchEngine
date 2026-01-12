@@ -1,5 +1,3 @@
-#include "Configuration.h"
-#include "CppJieBaSplit.h"
 #include "pageLibPreprocessor.h"
 #include "tinyxml2.h"
 #include <math.h>

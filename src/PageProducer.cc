@@ -1,5 +1,4 @@
 #include "PageProducer.h"
-#include "Configuration.h"
 #include "simhash/Simhasher.hpp"
 #include "tinyxml2.h"
 #include <cstddef>

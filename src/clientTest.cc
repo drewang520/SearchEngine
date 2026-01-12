@@ -43,7 +43,7 @@ void LoadHtml(json & j)
      }
      ofs << "</body></html>\n";
      ofs.close();
-     system("google-chrome file:///home/komorebi/study/project/search_engine/data/html/client.html");
+     system("google-chrome file:///home/drewang/study/project/search_engine/data/html/client.html");
 }
 
 void test() 
@@ -79,7 +79,7 @@ void test()
 		string line;
 		cout<< ">> pls input some message:";
 		getline(cin, line);
-        msg.id = 1;
+        msg.id = Protocol::KEY_RECOMMAND;
         msg.data = line;
         msg.length = line.size();
         ProtocolParser::to_json(j, msg);
@@ -98,7 +98,7 @@ void test()
 		getline(cin, line);
         vector<string> vec;
         ProtocolParser::jsonToVec(ProtocolParser::doParse(KeyWords), vec); 
-        msg.id = 2;
+        msg.id = Protocol::WEBPAGE_SEARCH;
         msg.data = line;
         msg.length = line.size();
 

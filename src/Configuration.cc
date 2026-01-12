@@ -4,6 +4,7 @@
 #include <fstream>
 #include <filesystem>
 #include <string>
+#include <iostream>
 
 using std::ifstream;
 using json = nlohmann::json;
@@ -50,6 +51,7 @@ void Configuration::LoadStopWords()
 {
     ifstream ifs1(_config.at("stop_words_en"));
     ifstream ifs2(_config.at("stop_words_cn"));
+    ifstream ifs3(_config.at("stop_word_path"));
     string line;
     while (std::getline(ifs1, line))
     {
@@ -65,7 +67,14 @@ void Configuration::LoadStopWords()
         line.erase(remove(line.begin(), line.end(), '\r'), line.end());
         _stopWords.insert(line);
     }
-    /* std::cout << "_stopWords.size = " << _stopWords.size() << "\n"; */
+    std::cout << "_stopWords.size = " << _stopWords.size() << "\n";
+    while (std::getline(ifs3, line))
+    {
+        // 删除行内所有的\r
+        line.erase(remove(line.begin(), line.end(), '\r'), line.end());
+        _stopWords.insert(line);
+    }
+    std::cout << "_stopWords.size = " << _stopWords.size() << "\n";
 }
 
 const set<string>& Configuration::getStopWords() const

@@ -14,6 +14,12 @@ using std::vector;
 
 namespace Protocol {
 
+enum Recommand_Search
+{
+    KEY_RECOMMAND,
+    WEBPAGE_SEARCH
+};
+
 struct Message
 {
     int id;
