@@ -67,14 +67,14 @@ void Configuration::LoadStopWords()
         line.erase(remove(line.begin(), line.end(), '\r'), line.end());
         _stopWords.insert(line);
     }
-    std::cout << "_stopWords.size = " << _stopWords.size() << "\n";
+    /* std::cout << "_stopWords.size = " << _stopWords.size() << "\n"; */
     while (std::getline(ifs3, line))
     {
         // 删除行内所有的\r
         line.erase(remove(line.begin(), line.end(), '\r'), line.end());
         _stopWords.insert(line);
     }
-    std::cout << "_stopWords.size = " << _stopWords.size() << "\n";
+    /* std::cout << "_stopWords.size = " << _stopWords.size() << "\n"; */
 }
 
 const set<string>& Configuration::getStopWords() const

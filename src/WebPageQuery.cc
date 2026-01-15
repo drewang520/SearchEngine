@@ -1,5 +1,5 @@
-#include "WebPageSearcher.h"
 #include "CppJieBaSplit.h"
+#include "WebPageSearcher.h"
 #include <math.h>
 #include <cstddef>
 #include <fstream>
@@ -14,6 +14,7 @@ using std::set;
 WebPageSearch::WebPageSearch(const string& keyword, const Configuration * config)
 : _sought(keyword)
 , _config(config)
+, _jieba(_config)
 {
   
 }
@@ -21,17 +22,16 @@ WebPageSearch::WebPageSearch(const string& keyword, const Configuration * config
 vector<WebPage> WebPageSearch::doQuery()
 {
     WebPageQuery webPageQuery(_config);
-    return webPageQuery.doQuery(_sought);
+    return webPageQuery.doQuery(_sought, _jieba);
 }
 
 WebPageQuery::WebPageQuery(const Configuration * config)
 : _config(config)
 {
-    ifstream ifs1(_config->getConfig().at("invertIndexTable"));
-    ifstream ifs2(_config->getConfig().at("newoffset"));
+    ifstream ifs(_config->getConfig().at("invertIndexTable"));
     string line;
     string word, docid, weight;
-    while (std::getline(ifs1, line))
+    while (std::getline(ifs, line))
     {
         istringstream iss(line);
         iss >> word;
@@ -40,8 +40,11 @@ WebPageQuery::WebPageQuery(const Configuration * config)
             _invertIndexLib[word].emplace_back(stoi(docid), stod(weight));
         }
     }
+    ifs.close();
+
+    ifs.open(_config->getConfig().at("newoffset"));
     string pos, offset;
-    while (std::getline(ifs2, line))
+    while (std::getline(ifs, line))
     {
         istringstream iss(line);
         while (iss >> docid >> pos >> offset)
@@ -50,21 +53,22 @@ WebPageQuery::WebPageQuery(const Configuration * config)
             _offsetLib[stoi(docid)].second= stoi(offset);
         }
     }
+    ifs.close();
 }
 
-vector<WebPage> WebPageQuery::doQuery(const string& key)
+vector<WebPage> WebPageQuery::doQuery(const string& key, const CppJiebaSplit& jieba)
 {
     set<string> stopWords = _config->getStopWords();
     vector<string> clearWords;
     vector<WebPage> webPage;
 
-    CppJiebaSplit cppjieba(_config);
-    cppjieba.cut(key, clearWords, stopWords);
+    jieba.cut(key, clearWords, stopWords);
     if (clearWords.empty())
     {
         std::cout << "the word is stopWords" << "\n";
         return {};
     }
+
     map<int, vector<double>> doc_weight;
     size_t queryLen = clearWords.size();
 
@@ -152,6 +156,7 @@ vector<WebPage> WebPageQuery::doQuery(const string& key)
               });
 
     // 选取余弦值最大的前10个文章并json化传个客户端
+    // 这里是要访问磁盘的地方，缓存在这里体现出重要性
     ifstream ifs(_config->getConfig().at("newripepage"));    
     for (size_t i = 0; i < stoi(_config->getConfig().at("queryWebPageNum")); ++i)
     {

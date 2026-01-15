@@ -13,7 +13,7 @@ CppJiebaSplit::CppJiebaSplit(const Configuration * config)
 /*     _jieba.Cut(key, words, true); */
 /* } */
 
-void CppJiebaSplit::cut(const string& key, vector<string>& clearWords, const set<string>& stop_words)
+void CppJiebaSplit::cut(const string& key, vector<string>& clearWords, const set<string>& stop_words) const
 {
     vector<string> words;
     /* _jieba.Cut(key, words, true); */
@@ -32,7 +32,7 @@ void CppJiebaSplit::cut(const string& key, vector<string>& clearWords, const set
     }
 }
 
-void CppJiebaSplit::cut(const string& key, map<string, int>& clearWords, const set<string>& stop_words)
+void CppJiebaSplit::cut(const string& key, map<string, int>& clearWords, const set<string>& stop_words) const
 {
     vector<string> words;
     /* _jieba.Cut(key, words, true); */

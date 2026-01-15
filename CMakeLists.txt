@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.22)
 project(search_engine LANGUAGES CXX)
 
+# <----------- set C++ standard ------------>
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+
 
 include_directories(
     ${PROJECT_SOURCE_DIR}/include
@@ -67,6 +71,7 @@ add_executable(dictionary
 
 add_executable(RSserver
         src/Configuration.cc
+        src/MyRedis.cc
         src/tinyxml2.cpp
         src/KeyRecommander.cc
         src/Dictionary.cc
@@ -90,3 +95,19 @@ add_executable(RSserver
         src/Reactor/Acceptor.cc
         src/Reactor/Condition.cc
     )
+
+# <------------ add hiredis dependency --------------->
+find_path(HIREDIS_HEADER hiredis)
+target_include_directories(RSserver PUBLIC ${HIREDIS_HEADER})
+
+find_library(HIREDIS_LIB hiredis)
+target_link_libraries(RSserver ${HIREDIS_LIB})
+
+# <------------ add redis-plus-plus dependency -------------->
+# NOTE: this should be *sw* NOT *redis++*
+find_path(REDIS_PLUS_PLUS_HEADER sw)
+target_include_directories(RSserver PUBLIC ${REDIS_PLUS_PLUS_HEADER})
+
+find_library(REDIS_PLUS_PLUS_LIB redis++)
+target_link_libraries(RSserver ${REDIS_PLUS_PLUS_LIB})
+

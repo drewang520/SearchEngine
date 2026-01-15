@@ -2,7 +2,7 @@
 #define _WEB_PAGE_SEARCHER_H
 
 #include "Configuration.h"
-#include "PageProducer.h"
+#include "CppJieBaSplit.h"
 #include "WebPage.h"
 #include <vector>
 #include <unordered_map>
@@ -18,7 +18,7 @@ class WebPageQuery
 {
 public:
     WebPageQuery(const Configuration * config);
-    vector<WebPage> doQuery(const string& key);
+    vector<WebPage> doQuery(const string& key, const CppJiebaSplit& jieba);
 
 private:
     unordered_map<string, vector<pair<int, double>>> _invertIndexLib;
@@ -35,6 +35,7 @@ public:
 private:
     string _sought;
     const Configuration * _config;
+    CppJiebaSplit _jieba;
 };
 
 #endif

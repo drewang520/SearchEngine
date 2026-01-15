@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>页面未找到 - 404 错误</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .error-container {
+            max-width: 600px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .error-code {
+            font-size: 120px;
+            font-weight: 800;
+            color: #4a6fa5;
+            line-height: 1;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 0 rgba(74, 111, 165, 0.1);
+        }
+        
+        .error-title {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        
+        .error-message {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: #5d6d7e;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+        
+        .btn {
+            padding: 14px 32px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: #4a6fa5;
+            color: white;
+            box-shadow: 0 5px 15px rgba(74, 111, 165, 0.3);
+        }
+        
+        .btn-primary:hover {
+            background: #3a5a80;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(74, 111, 165, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #4a6fa5;
+            border: 2px solid #4a6fa5;
+        }
+        
+        .btn-secondary:hover {
+            background: #e9ecef;
+            transform: translateY(-3px);
+        }
+        
+        .search-box {
+            display: flex;
+            margin: 25px 0;
+            border-radius: 50px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .search-input {
+            flex-grow: 1;
+            padding: 15px 25px;
+            border: none;
+            font-size: 16px;
+            background: #f8f9fa;
+        }
+        
+        .search-btn {
+            padding: 15px 30px;
+            background: #4a6fa5;
+            color: white;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .search-btn:hover {
+            background: #3a5a80;
+        }
+        
+        .home-icon {
+            font-size: 60px;
+            color: #4a6fa5;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 480px) {
+            .error-code {
+                font-size: 80px;
+            }
+            
+            .error-title {
+                font-size: 22px;
+            }
+            
+            .error-container {
+                padding: 40px 25px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="home-icon">🏠</div>
+        <h1 class="error-code">404</h1>
+        <h2 class="error-title">页面未找到</h2>
+        
+        <p class="error-message">
+            抱歉，您访问的页面不存在或已被移动。<br>
+            请检查URL是否正确，或使用以下方式继续浏览。
+        </p>
+        
+        <div class="search-box">
+            <input type="text" class="search-input" placeholder="搜索您需要的内容...">
+            <button class="search-btn">搜索</button>
+        </div>
+        
+        <div class="action-buttons">
+            <a href="/" class="btn btn-primary">返回首页</a>
+            <a href="javascript:history.back()" class="btn btn-secondary">返回上一页</a>
+        </div>
+    </div>
+
+    <script>
+        // 搜索功能
+        document.querySelector('.search-btn').addEventListener('click', function() {
+            const query = document.querySelector('.search-input').value;
+            if (query.trim()) {
+                // 这里可以替换为实际的搜索URL
+                window.location.href = `/search?q=${encodeURIComponent(query)}`;
+            }
+        });
+        
+        // 按Enter键搜索
+        document.querySelector('.search-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.querySelector('.search-btn').click();
+            }
+        });
+        
+        // 自动焦点到搜索框
+        document.querySelector('.search-input').focus();
+    </script>
+</body>
+</html>

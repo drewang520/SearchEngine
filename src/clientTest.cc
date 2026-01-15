@@ -113,7 +113,8 @@ void test()
         json j = ProtocolParser::doParse(buff);        
         if (!j.is_array())
         {
-            std::cout << "not found" << "\n";
+            /* std::cout << "not found" << "\n"; */
+            system("google-chrome file:///home/drewang/study/project/search_engine/data/html/error.html");
             continue;
         }
         LoadHtml(j);
