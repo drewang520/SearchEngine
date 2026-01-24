@@ -7,7 +7,6 @@
 #include <vector>
 #include <memory>
 
-
 using std::vector;
 using std::unique_ptr;
 using std::string;
@@ -36,6 +35,7 @@ class KeyRecommander
 {
 public:
     KeyRecommander(string queryWords, const Configuration * config);
+    string startQuery(int cacheID);
     vector<string> doQuery();
 
 private:

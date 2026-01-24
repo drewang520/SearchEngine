@@ -1,5 +1,10 @@
 #include "KeyRecommander.h"
+#include "ProtocolParser.h"
+#include "CacheManager.h"
 #include <iostream>
+#include <mutex>
+
+using namespace Protocol;
 
 KeyRecommander::KeyRecommander(string queryWords, const Configuration * config)
 : _queryWords(queryWords)
@@ -10,9 +15,24 @@ KeyRecommander::KeyRecommander(string queryWords, const Configuration * config)
 
 }
 
-vector<string> KeyRecommander::doQuery()
+string KeyRecommander::startQuery(int cacheID)
 {
     std::cout << "Start query >: " << "\n";
+    CacheManager * cacheManager = CacheManager::createCacheManger();
+    std::lock_guard<std::mutex> singleMutex(cacheManager->getMutex(cacheID));
+    auto &Cache= cacheManager->getCache(cacheID);
+    json j;
+    if (Cache.get(_queryWords, j))
+    {
+        return ProtocolParser::JsonToString(j);
+    }
+    j = ProtocolParser::vecToJson(doQuery());
+    Cache.addElem(_queryWords, j);
+    return ProtocolParser::JsonToString(j);
+}
+
+vector<string> KeyRecommander::doQuery()
+{
     map<string, set<int>> index = _pDict->getIndex();
     vector<pair<string, int>> dict = _pDict->getDict();
     vector<string> queryResult = {};

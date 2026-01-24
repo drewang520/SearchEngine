@@ -1,4 +1,5 @@
 #include <sw/redis++/redis++.h>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -17,7 +18,9 @@ public:
     MyRedis(Redis & redis);
     string RedisTransaction(const string& queryWord, KeyRecommander& keyRecommander);
     string RedisTransaction(const string& queryWord, WebPageSearch & webPageSearch); 
+    void selectDb(unsigned int index);
 
 private:
     Redis _redis;
+    std::mutex _mutex;
 };

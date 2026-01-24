@@ -4,6 +4,7 @@
 #include "Thread.h"
 #include "WorkThread.h"
 #include <memory>
+#include <string>
 #include <unistd.h>
 
 ThreadPool::ThreadPool(size_t threadNums, size_t queSize)
@@ -25,10 +26,11 @@ void ThreadPool::start()
 {
     for (size_t ret = 0; ret != _threadNums; ++ret)
     {
-        unique_ptr<Thread> ptr(new WorkThread(*this)); 
+        unique_ptr<Thread> ptr(new WorkThread(*this, std::to_string(ret))); 
         _threads.push_back(std::move(ptr));
     }
-
+    unique_ptr<Thread> TimerPtr(new TimerThread(std::to_string(_threadNums)));
+    _threads.push_back(std::move(TimerPtr));
     for(auto &_thread : _threads)
     {
         _thread->start();

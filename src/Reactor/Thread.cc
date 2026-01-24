@@ -4,10 +4,12 @@
 
 using std::perror;
 
+thread_local const char * thread_name = "cacheID";
 
-Thread::Thread()
+Thread::Thread(const std::string& name)
 : _pid(0)
 , isrunning(false)
+, _name(name)
 {
     
 }
@@ -39,6 +41,7 @@ void Thread::end()
 void * Thread::threadFunc(void *argc)
 {
     Thread * ptr = static_cast<Thread *>(argc);
+    thread_name = ptr->_name.c_str();
     if(ptr)
     {
         ptr->ChildWork();

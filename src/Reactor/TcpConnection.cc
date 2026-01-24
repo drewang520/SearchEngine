@@ -71,8 +71,8 @@ void TcpConnection::sendInLoop(const string& msg)
 string TcpConnection::toString()
 {
     ostringstream oss;
-    oss << _localAddress.getip() << ":"
-        << _localAddress.getport() << "--->"
+    oss << _clientAddress.getip() << ":"
+        << _clientAddress.getport() << "--->"
         << _localAddress.getip() << ":"
         << _localAddress.getport() << " ";
 

@@ -93,31 +93,31 @@ void test()
 		recv(clientfd, buff, sizeof(buff), 0);
 		printf("recv msg from server: %s\n", buff);
 
-        string KeyWords(buff);
-		cout << ">> pls choose one KeyWord:";
-		getline(cin, line);
-        vector<string> vec;
-        ProtocolParser::jsonToVec(ProtocolParser::doParse(KeyWords), vec); 
-        msg.id = Protocol::WEBPAGE_SEARCH;
-        msg.data = line;
-        msg.length = line.size();
+        /* string KeyWords(buff); */
+		/* cout << ">> pls choose one KeyWord:"; */
+		/* getline(cin, line); */
+        /* vector<string> vec; */
+        /* ProtocolParser::jsonToVec(ProtocolParser::doParse(KeyWords), vec); */ 
+        /* msg.id = Protocol::WEBPAGE_SEARCH; */
+        /* msg.data = line; */
+        /* msg.length = line.size(); */
 
-        ProtocolParser::to_json(j, msg);
-        message = ProtocolParser::JsonToString(j);
-        message.append("\n");
-		send(clientfd, message.data(), message.size(), 0);
+        /* ProtocolParser::to_json(j, msg); */
+        /* message = ProtocolParser::JsonToString(j); */
+        /* message.append("\n"); */
+		/* send(clientfd, message.data(), message.size(), 0); */
 
-        bzero(buff, sizeof(buff));
-		recv(clientfd, buff, sizeof(buff), 0);
-		printf("recv msg from server: %s\n", buff);
-        json j = ProtocolParser::doParse(buff);        
-        if (!j.is_array())
-        {
-            /* std::cout << "not found" << "\n"; */
-            system("google-chrome file:///home/drewang/study/project/search_engine/data/html/error.html");
-            continue;
-        }
-        LoadHtml(j);
+        /* bzero(buff, sizeof(buff)); */
+		/* recv(clientfd, buff, sizeof(buff), 0); */
+		/* printf("recv msg from server: %s\n", buff); */
+        /* json j = ProtocolParser::doParse(buff); */        
+        /* if (!j.is_array()) */
+        /* { */
+        /*     /1* std::cout << "not found" << "\n"; *1/ */
+        /*     system("google-chrome file:///home/drewang/study/project/search_engine/data/html/error.html"); */
+        /*     continue; */
+        /* } */
+        /* LoadHtml(j); */
 	}
 	close(clientfd);
 } 

@@ -60,6 +60,10 @@ add_executable(KeyCommander_test
         src/Configuration.cc
         src/Dictionary.cc
         src/KeyRecommander.cc
+        src/CacheManager.cc
+        src/ProtocolParser.cc
+        src/TimerManager.cc
+        src/LRUCache.cc
         src/test_KeyRecommander.cc
     )
 
@@ -69,9 +73,11 @@ add_executable(dictionary
         src/Configuration.cc
     )
 
-add_executable(RSserver
+add_executable(RSserver_Cache2
         src/Configuration.cc
-        src/MyRedis.cc
+        src/LRUCache.cc
+        src/CacheManager.cc
+        src/TimerManager.cc
         src/tinyxml2.cpp
         src/KeyRecommander.cc
         src/Dictionary.cc
@@ -89,7 +95,66 @@ add_executable(RSserver
         src/Reactor/TaskQueue.cc
         src/Reactor/TcpConnection.cc
         src/Reactor/TcpServer.cc
-        src/Reactor/TestRSserver.cc
+        src/Reactor/TestRSserver_MyCache2.cc
+        src/Reactor/Thread.cc
+        src/Reactor/ThreadPool.cc
+        src/Reactor/Acceptor.cc
+        src/Reactor/Condition.cc
+    )
+
+add_executable(RSserver_Cache
+        src/Configuration.cc
+        src/LRUCache.cc
+        src/CacheManager.cc
+        src/TimerManager.cc
+        src/tinyxml2.cpp
+        src/KeyRecommander.cc
+        src/Dictionary.cc
+        src/WebPageQuery.cc
+        src/WebPage.cc
+        src/CppJiebaSplit.cc
+        src/ProtocolParser.cc
+        src/Reactor/Acceptor.cc
+        src/Reactor/Condition.cc
+        src/Reactor/EventLoop.cc
+        src/Reactor/InetAddress.cc
+        src/Reactor/MutexLock.cc
+        src/Reactor/Socket.cc
+        src/Reactor/SocketIO.cc
+        src/Reactor/TaskQueue.cc
+        src/Reactor/TcpConnection.cc
+        src/Reactor/TcpServer.cc
+        src/Reactor/TestRSserver_MyCache.cc
+        src/Reactor/Thread.cc
+        src/Reactor/ThreadPool.cc
+        src/Reactor/Acceptor.cc
+        src/Reactor/Condition.cc
+    )
+
+add_executable(RSserver_Myredis
+        src/Configuration.cc
+        src/MyRedis.cc
+        src/CacheManager.cc
+        src/LRUCache.cc
+        src/TimerManager.cc
+        src/tinyxml2.cpp
+        src/KeyRecommander.cc
+        src/Dictionary.cc
+        src/WebPageQuery.cc
+        src/WebPage.cc
+        src/CppJiebaSplit.cc
+        src/ProtocolParser.cc
+        src/Reactor/Acceptor.cc
+        src/Reactor/Condition.cc
+        src/Reactor/EventLoop.cc
+        src/Reactor/InetAddress.cc
+        src/Reactor/MutexLock.cc
+        src/Reactor/Socket.cc
+        src/Reactor/SocketIO.cc
+        src/Reactor/TaskQueue.cc
+        src/Reactor/TcpConnection.cc
+        src/Reactor/TcpServer.cc
+        src/Reactor/TestRSserver_Myredis.cc
         src/Reactor/Thread.cc
         src/Reactor/ThreadPool.cc
         src/Reactor/Acceptor.cc
@@ -98,16 +163,16 @@ add_executable(RSserver
 
 # <------------ add hiredis dependency --------------->
 find_path(HIREDIS_HEADER hiredis)
-target_include_directories(RSserver PUBLIC ${HIREDIS_HEADER})
+target_include_directories(RSserver_Myredis PUBLIC ${HIREDIS_HEADER})
 
 find_library(HIREDIS_LIB hiredis)
-target_link_libraries(RSserver ${HIREDIS_LIB})
+target_link_libraries(RSserver_Myredis ${HIREDIS_LIB})
 
-# <------------ add redis-plus-plus dependency -------------->
-# NOTE: this should be *sw* NOT *redis++*
+# # <------------ add redis-plus-plus dependency -------------->
+# # NOTE: this should be *sw* NOT *redis++*
 find_path(REDIS_PLUS_PLUS_HEADER sw)
-target_include_directories(RSserver PUBLIC ${REDIS_PLUS_PLUS_HEADER})
+target_include_directories(RSserver_Myredis PUBLIC ${REDIS_PLUS_PLUS_HEADER})
 
 find_library(REDIS_PLUS_PLUS_LIB redis++)
-target_link_libraries(RSserver ${REDIS_PLUS_PLUS_LIB})
+target_link_libraries(RSserver_Myredis ${REDIS_PLUS_PLUS_LIB})
 
