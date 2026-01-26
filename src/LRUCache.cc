@@ -57,26 +57,10 @@ void LRUCache::addElem(const string& queryWord, const json& value)
 
 bool LRUCache::get(const string& queryWord, json& value)
 {
-    /* std::cout << "hashmap.size = " << _hashMap.size() << "\n"; */
-    /* for (auto & [word, it] : _hashMap) */
-    /* { */
-    /*     std::cout << word << " "; */
-    /* } */
-    /* std::cout << "\n"; */
     auto iter = _hashMap.find(queryWord);
     if (iter != _hashMap.end())
     {
-        /* std::cout << "befor splice :_resultList : " << "\n"; */
-        /* for (auto & [word, Value] : _resultList) */
-        /* { */
-        /*     std::cout << word << ":" << Value << "\n"; */
-        /* } */
         _resultList.splice(_resultList.begin(), _resultList, iter->second);
-        /* std::cout << "after splice :_resultList : " << "\n"; */
-        /* for (auto & [word, Value] : _resultList) */
-        /* { */
-        /*     std::cout << word << ":" << Value << "\n"; */
-        /* } */
         _pendingUpdateList.remove(*(iter->second));
         _pendingUpdateList.push_front(std::move(std::make_pair(iter->second->first, iter->second->second)));
         value = iter->second->second;

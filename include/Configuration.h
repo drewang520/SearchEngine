@@ -17,8 +17,7 @@ public:
     static Configuration * createpInstance();
     const map<string, string>& getConfig() const;
     const set<string>& getStopWords() const;
-    const string& operator[](const string& key);
-
+   
 private:
     static void init();
     static void destory();

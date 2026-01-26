@@ -12,7 +12,6 @@
 #include "WebPageSearcher.h"
 #include <functional>
 #include <iostream>
-#include <pthread.h>
 #include <string>
 
 using namespace Protocol;
@@ -75,12 +74,12 @@ class RecommandSearchServer
 {
 public:
     RecommandSearchServer(const Configuration * config)
-    : _threadpool(stoi(config->getConfig().at("threadNums")), stoi(config->getConfig().at("queSize")))
+    : _config(config)
+    , _threadpool(stoi(config->getConfig().at("threadNums")), stoi(config->getConfig().at("queSize")))
     , _tcpserver(config->getConfig().at("ip"), stoi(config->getConfig().at("port")))
-    , _config(config)
     , _cacheManager(CacheManager::createCacheManger())
     {
-        
+
     }
 
     void start()
