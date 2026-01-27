@@ -33,10 +33,7 @@ public:
                             
     }
 
-    ~Mytask()
-    {
-
-    }
+    virtual ~Mytask() {}
 
     void process() override
     {

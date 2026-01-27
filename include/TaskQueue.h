@@ -21,8 +21,6 @@ public:
     bool isFull();
     void wakeup();
 
-    size_t get_finish_threadNum();
-
 private:
     size_t _queSize;
     queue<unique_ptr<Task>> _taskque;
@@ -30,7 +28,6 @@ private:
     Condition _notEmpty;
     Condition _notFull;
     bool _flag;
-    size_t _finishNum;
 };
 
 class AutoMutexLock
@@ -51,4 +48,5 @@ public:
 private:
     MutexLock & _mutex;
 };
+
 #endif

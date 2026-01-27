@@ -10,7 +10,7 @@ class Thread
 {
 public:
     Thread(const std::string& name);
-    virtual ~Thread();
+    virtual ~Thread() {}
     void start();
     void end();
     virtual void ChildWork() = 0;

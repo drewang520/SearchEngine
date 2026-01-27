@@ -1,11 +1,8 @@
 #include "ThreadPool.h"
-#include "Task.h"
-#include "TaskQueue.h"
-#include "Thread.h"
 #include "WorkThread.h"
+#include <unistd.h>
 #include <memory>
 #include <string>
-#include <unistd.h>
 
 ThreadPool::ThreadPool(size_t threadNums, size_t queSize)
 : _threadNums(threadNums)
@@ -43,11 +40,6 @@ void ThreadPool::stop()
     {
         sleep(1);
     }
-    /* sleep(1); */
-    /* while (_taskque.get_finish_threadNum() == _threadNums) */
-    /* { */
-    /*     _taskque.wakeup(); */
-    /* } */
     _taskque.wakeup();
     for (auto &_thread : _threads)
     {
@@ -63,11 +55,6 @@ void ThreadPool::addTask(unique_ptr<Task> task)
     }
 }
 
-/* unique_ptr<Task> ThreadPool::getTask() */
-/* { */
-/*     return _taskque.pop(); */
-/* } */
-
 void ThreadPool::threadFunc()
 {
     while (1)
@@ -75,7 +62,7 @@ void ThreadPool::threadFunc()
         unique_ptr<Task> ptr(std::move(_taskque.pop()));
         if (ptr)
         {
-           ptr->process();
+           ptr->process(); //多态
         }
         else
         {
@@ -83,3 +70,4 @@ void ThreadPool::threadFunc()
         }
     }
 }
+

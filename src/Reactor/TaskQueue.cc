@@ -7,7 +7,6 @@ TaskQueue::TaskQueue(size_t queSize)
 , _notEmpty(_mutex)
 , _notFull(_mutex)
 , _flag(true)
-, _finishNum(0)
 {
 
 }
@@ -57,7 +56,6 @@ unique_ptr<Task> TaskQueue::pop()
     }
     else
     {
-        /* ++_finishNum; */
         return nullptr;
     }
 }
@@ -78,7 +76,3 @@ void TaskQueue::wakeup()
     _notEmpty.signalAll();
 }
    
-size_t TaskQueue::get_finish_threadNum()
-{
-    return _finishNum;
-}

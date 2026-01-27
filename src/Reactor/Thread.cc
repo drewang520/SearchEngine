@@ -14,14 +14,6 @@ Thread::Thread(const std::string& name)
     
 }
 
-Thread::~Thread()
-{
-    if(isrunning)
-    {
-        pthread_detach(_pid);
-    }
-}
-
 void Thread::start()
 {
     int ret = pthread_create(&_pid, nullptr, threadFunc, (void *)this);
@@ -44,7 +36,7 @@ void * Thread::threadFunc(void *argc)
     thread_name = ptr->_name.c_str();
     if(ptr)
     {
-        ptr->ChildWork();
+        ptr->ChildWork(); //多态
     }
     pthread_exit((void *)0);
 }
