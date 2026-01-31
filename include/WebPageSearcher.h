@@ -35,6 +35,7 @@ public:
 private:
     string _sought;
     const Configuration * _config;
+    WebPageQuery _webPageSearch;
     CppJiebaSplit _jieba;
 };
 

@@ -56,15 +56,19 @@ void PageProducer::create(const string& filepath, const string& filename)
             description = itemNode->FirstChildElement("content")->GetText();
         }
 
-        std::regex reg("<[^>]+>"); //通用正则表达式
+        std::regex reg("( |　|&nbsp;|[\r]|[\n]|<[^>]+>|showPlayer[(]+[^)]+[)];)"); //通用正则表达式
         description = std::regex_replace(description, reg, "");
+        title = std::regex_replace(title, reg, "");
 
         RSSItem rssitem;
         rssitem._title = title;
         rssitem._link = link;
         rssitem._description = description;
 
-        _page.push_back(rssitem);
+        if (!rssitem._description.empty())
+        {
+            _page.push_back(rssitem);
+        }
 
         itemNode = itemNode->NextSiblingElement("item");
     }
@@ -74,28 +78,18 @@ void PageProducer::store()
 {
     std::ofstream ofs(_config->getConfig().at("ripepage"));        
     std::ofstream ofs2(_config->getConfig().at("pageoffset"));
-    int prepos = 0;
-    int pos = 0;
-    int length = 0;
-    pair<int, int> pos_len;
+    std::ofstream::pos_type p1, p2;
     for (size_t idx = 0; idx < _page.size(); ++idx)
     {
+        p1 = ofs.tellp();
         ofs << "<doc>\n" 
             << "\t<docid>"  << idx + 1 << "</docid>\n" 
             << "\t<title>" << _page[idx]._title << "</title>\n"
             << "\t<link>" << _page[idx]._link << "</link>\n"
             << "\t<content>" << _page[idx]._description << "</content>\n"
             << "</doc>\n";
-        pos = ofs.tellp();
-        length = pos - prepos;
-        pos_len = {prepos, length};
-        _offsetPage.insert({(idx + 1), pos_len});
-        prepos = pos + 1;
-    }
-    
-    for (auto elem : _offsetPage)
-    {
-        ofs2 << elem.first << " " << elem.second.first << " " << elem.second.second << "\n";
+        p2 = ofs.tellp();
+        ofs2 << idx + 1 << " " << std::to_string(p1) << " " << std::to_string(p2 - p1) << "\n";
     }
     ofs.close();
     ofs2.close();
@@ -103,8 +97,8 @@ void PageProducer::store()
 
 void PageProducer::pageDeduplicat()
 {
-    vector<uint64_t> simhash;
-    vector<RSSItem> tmpRSSItem;
+    /* vector<uint64_t> simhash; */
+    unordered_map<int, uint64_t> simhash;
     const char * dicpath = _config->getConfig().at("dict_path").c_str();
     const char * modelpath = _config->getConfig().at("model_path").c_str();
     const char * idfpath = _config->getConfig().at("idf_path").c_str();
@@ -112,55 +106,51 @@ void PageProducer::pageDeduplicat()
 
     Simhasher simhasher(dicpath, modelpath, idfpath, stopwords);    
     uint64_t value;
-    size_t topN = 5;
-    size_t count = 0;
+    size_t topN = 50;
+    bool isdedup = false;
     for (size_t idx = 0; idx < _page.size(); ++idx)
     {
+        isdedup = false;
         simhasher.make(_page[idx]._description, topN, value);
-        simhash.push_back(value);
-    }
-
-    // simhash时间复杂度 O(N * N)
-    set<int> index;
-    for (size_t i = 0; i < simhash.size(); ++i)
-    {
-        for (size_t j = i + 1; j < simhash.size(); ++j)
+        for (auto & [pageid, hashvalue] : simhash)
         {
-            if (Simhasher::isEqual(simhash[i], simhash[j], 5))
+            if (Simhasher::isEqual(hashvalue, value, 3))
             {
-                index.insert(i);
+                isdedup = true;
+                break; 
             }
         }
+        if (! isdedup)
+        {
+            simhash[idx] = value;
+        }
     }
+    // simhash时间复杂度 O(N * N)
 
     std::ofstream ofs(_config->getConfig().at("newripepage"));
     std::ofstream ofs2(_config->getConfig().at("newoffset"));
     size_t number = 0;
-    int prepos = 0;
-    int pos = 0;
-    int length = 0;
-    pair<int, int> pos_len;
-    for (size_t idx = 0; idx < index.size(); ++idx)
+    std::fstream::pos_type p1, p2;
+    /* int prepos = 0, pos = 0, length = 0; */
+    /* pair<int, int> pos_len; */
+    for (auto & [pageid, hashvalue] : simhash)
     {
-        if (index.find(idx) == index.end())
-        {
-            ofs << "<doc>\n" 
-                << "\t<docid>"  << number + 1 << "</docid>\n" 
-                << "\t<title>" << _page[idx]._title << "</title>\n"
-                << "\t<link>" << _page[idx]._link << "</link>\n"
-                << "\t<content>" << _page[idx]._description << "</content>\n"
-                << "</doc>\n";
-            pos = ofs.tellp();
-            length = pos - prepos;
-            pos_len = {prepos, length};
-            _offsetPage.insert({(number + 1), pos_len});
-            prepos = pos + 1;
-            ++number;
-        }
-    }
-    for (auto elem : _offsetPage)
-    {
-        ofs2 << elem.first << " " << elem.second.first << " " << elem.second.second << "\n";
+        p1 = ofs.tellp();
+        ofs << "<doc>\n" 
+            << "\t<docid>"  << number + 1 << "</docid>\n" 
+            << "\t<title>" << _page[pageid]._title << "</title>\n"
+            << "\t<link>" << _page[pageid]._link << "</link>\n"
+            << "\t<content>" << _page[pageid]._description << "</content>\n"
+            << "</doc>\n";
+        p2 = ofs.tellp();
+        ofs2 << number + 1 << " " << std::to_string(p1) << " " << std::to_string(p2 - p1) << "\n";
+        ++number;
+        /* pos = ofs.tellp(); */
+        /* length = pos - prepos; */
+        /* pos_len = {prepos, length}; */
+        /* _offsetPage.insert({(number + 1), pos_len}); */
+        /* prepos = pos + 1; */
+        /* ++number; */
     }
     ofs.close();
     ofs2.close();

@@ -15,50 +15,28 @@ Dictionary::Dictionary(const Configuration * config)
 
 void Dictionary::init()
 {
-    ifstream ifs1(_config->getConfig().at("dic.dat"));
-    ifstream ifs2(_config->getConfig().at("dicIndex.dat"));
+    ifstream ifs(_config->getConfig().at("dic.dat"));
     string line;
-    while (std::getline(ifs1, line))
+    string word;
+    int num;
+    while (std::getline(ifs, line))
     {
-        istringstream ssf(line);
-        string word;
-        int i = 0;
-        pair<string, int> p;
-        while (ssf >> word)
-        {
-            if (i == 0)
-            {
-                p.first = word;
-                i = 1;
-            }
-            else 
-            {
-                p.second = std::stoi(word);
-            }
-        }
-        _dict.push_back(p);
+        istringstream iss(line);
+        iss >> word >> num;
+        _dict.push_back(std::make_pair(word, num));
     }
-    
-    while (std::getline(ifs2, line))
+    ifs.close();
+    ifs.open(_config->getConfig().at("dicIndex.dat"));
+    while (std::getline(ifs, line))
     {
-        istringstream ssf(line);
-        string word;
-        int i = 0;
-        pair<string, set<int>> p;
-        while (ssf >> word)
+        istringstream iss(line);
+        iss >> word;
+        while (iss >> num)
         {
-            if (i == 0)
-            {
-                p.first = word;
-                i = 1;
-            }
-            else 
-            {
-                p.second.insert(std::stoi(word));        
-            }
+            _index[word].insert(num);
         }
-        pair<map<string, set<int>>::iterator, bool> P = _index.insert(p);
     }
+    ifs.close();
 }
 
 vector<pair<string, int>> & Dictionary::getDict()

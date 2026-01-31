@@ -20,13 +20,14 @@ class CppJiebaSplit
 public:
     CppJiebaSplit(const Configuration * config);
 
-    void cut(const string& key, vector<string>& clearWords, const set<string>& stop_words) const;
-    void cut(const string& key, map<string, int>& words, const set<string>& stop_words) const;
+    void cut(const string& key, vector<string>& clearWords) const;
+    void cut(const string& key, map<string, int>& words) const;
     
 
 private:
     const Configuration * _config;
     cppjieba::Jieba  _jieba;
+    const set<string>& _stopWords;
 };
 
 #endif

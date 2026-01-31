@@ -33,3 +33,4 @@ void TcpServer::setAllCallback(TcpConnection::TcpConnectionCallback&& connection
     _evtiloop.LoginMessageCallback(std::move(messagecb));
     _evtiloop.LoginCloseCallback(std::move(closecb));
 }
+

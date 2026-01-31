@@ -1,5 +1,6 @@
 #include "Configuration.h"
 #include "ProtocolParser.h"
+#include "WebPage.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -87,37 +88,55 @@ void test()
         message.append("\n");
 		//1. 客户端先发数据
 		send(clientfd, message.data(), message.size(), 0);
-		/* close(clientfd); */
 
-		char buff[4096] = {0};
-		recv(clientfd, buff, sizeof(buff), 0);
-		printf("recv msg from server: %s\n", buff);
+        vector<char> recvmsg(4096);
+		recv(clientfd, recvmsg.data(), recvmsg.size(), 0);
+        string word(recvmsg.begin(), recvmsg.end());
+        j = ProtocolParser::doParse(word);
+        vector<string> words;
+        ProtocolParser::jsonToVec(j, words);
+        std::cout << "recv word from server: " << "\n";
+        for (auto &elem :words)
+        {
+            std::cout << elem << "\n";
+        }
 
         /* string KeyWords(buff); */
-		/* cout << ">> pls choose one KeyWord:"; */
-		/* getline(cin, line); */
+		cout << ">> pls choose one KeyWord:";
+		getline(cin, line);
         /* vector<string> vec; */
         /* ProtocolParser::jsonToVec(ProtocolParser::doParse(KeyWords), vec); */ 
-        /* msg.id = Protocol::WEBPAGE_SEARCH; */
-        /* msg.data = line; */
-        /* msg.length = line.size(); */
+        msg.id = Protocol::WEBPAGE_SEARCH;
+        msg.data = line;
+        msg.length = line.size();
 
-        /* ProtocolParser::to_json(j, msg); */
-        /* message = ProtocolParser::JsonToString(j); */
-        /* message.append("\n"); */
-		/* send(clientfd, message.data(), message.size(), 0); */
-
+        ProtocolParser::to_json(j, msg);
+        message = ProtocolParser::JsonToString(j);
+        message.append("\n");
+		send(clientfd, message.data(), message.size(), 0);
+        /* recvmsg.clear(); */
+        vector<char> recvmsg2(4096);
+        vector<WebPage> webWords;
         /* bzero(buff, sizeof(buff)); */
-		/* recv(clientfd, buff, sizeof(buff), 0); */
-		/* printf("recv msg from server: %s\n", buff); */
-        /* json j = ProtocolParser::doParse(buff); */        
-        /* if (!j.is_array()) */
-        /* { */
-        /*     /1* std::cout << "not found" << "\n"; *1/ */
-        /*     system("google-chrome file:///home/drewang/study/project/search_engine/data/html/error.html"); */
-        /*     continue; */
-        /* } */
-        /* LoadHtml(j); */
+		recv(clientfd, recvmsg2.data(), recvmsg2.size(), 0);
+        string Web(recvmsg2.begin(), recvmsg2.end());
+        json j = ProtocolParser::doParse(Web);        
+        /* std::cout << "recv web from server: " << "\n"; */
+        ProtocolParser::jsonToVecWeb(j, webWords);
+        std::cout << "webWords.size()" << webWords.size() << "\n";
+        for (auto &elem :webWords)
+        {
+            std::cout << "Web: \n" << "title: " << elem.getTitle() << "\n"
+                << "link: " << elem.getLink() << "\n"
+                << "\n";
+        }
+        if (!j.is_array())
+        {
+            /* std::cout << "not found" << "\n"; */
+            system("google-chrome file:///home/drewang/study/project/search_engine/data/html/error.html");
+            continue;
+        }
+        LoadHtml(j);
 	}
 	close(clientfd);
 } 

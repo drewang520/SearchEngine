@@ -46,6 +46,7 @@ void Protocol::ProtocolParser::to_json(json & j, const WebPage& web)
 
 void Protocol::ProtocolParser::from_json(const json & j, WebPage& web)
 {
+    
     j.at("title").get_to(web._title);
     j.at("link").get_to(web._link);
 }
@@ -69,9 +70,11 @@ json Protocol::ProtocolParser::vecWebToJson(const vector<WebPage>& web)
 void Protocol::ProtocolParser::jsonToVecWeb(const json &j, vector<WebPage>& vec)
 {
     vec.clear();
-    for (auto &web : vec)
+    for (size_t i = 0; i < j.size(); ++i)
     {
-        from_json(j, web);
+        WebPage web;        
+        from_json(j[i], web);
+        vec.push_back(web);
     }
 }
 

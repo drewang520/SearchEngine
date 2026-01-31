@@ -1,9 +1,17 @@
 #include "WebPage.h"
 #include "tinyxml2.h"
 
+#include <cstdlib>
 #include <iostream>
 
 using namespace tinyxml2;
+
+WebPage::WebPage()
+: _title()
+, _link()
+{
+
+}
 
 WebPage::WebPage(const string& doc)
 : _doc(doc)
@@ -48,3 +56,4 @@ string WebPage::getDoc() const
 {
     return _doc;
 }
+

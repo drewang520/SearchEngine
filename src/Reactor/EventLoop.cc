@@ -230,3 +230,4 @@ void EventLoop::LoginCloseCallback(TcpConnectionCallback && closecb)
 {
     _closeCb = std::move(closecb);
 }
+

@@ -1,5 +1,7 @@
 #include "pageLibPreprocessor.h"
 #include "tinyxml2.h"
+#include <csignal>
+#include <cstddef>
 #include <math.h>
 #include <ctime>
 #include <fstream>
@@ -21,38 +23,44 @@ pageLibPreprocessor::pageLibPreprocessor(const Configuration * config)
 
 void pageLibPreprocessor::buildInvertIndexMap()
 {
-    const string newripepage = _config->getConfig().at("newripepage");
-    const string newoffset = _config->getConfig().at("newoffset");
-    set<string> stopWords = _config->getStopWords();
+    string newripepage = _config->getConfig().at("newripepage");
+    std::ifstream ifs(_config->getConfig().at("newoffset"));
     map<string, int> clearWords;
     map<string, set<int>> docFrequency;
     CppJiebaSplit cppjieba(_config);
-
-    /* std::cout << "newripepage: " << newripepage << "\n"; */
-    XMLDocument xml;
-    xml.LoadFile(newripepage.c_str());
-    if (xml.ErrorID())
+    string line;
+    int docid, pos, offset;
+    while (std::getline(ifs, line))
     {
-        std::cerr << "LoadFile fail" << "\n";
-        return;
+        istringstream iss( line);
+        iss >> docid >> pos >> offset;
+        _offsetLib[docid] = {pos, offset};
     }
-
-    XMLNode * doc = xml.FirstChildElement("doc");
-    int pageNum = xml.ChildElementCount();
-    std::cout << "pageNum = " << pageNum << "\n";
-    while (doc)
+    ifs.close();
+    int pageNum = _offsetLib.size();
+    ifs.open(newripepage);
+    for (size_t i = 0; i < pageNum; ++i)
     {
-        string docid = doc->FirstChildElement("docid")->GetText();
-        int docid_int = std::stoi(docid);
-        /* std::cout << "docid_int = " << docid_int << "\n"; */
-        string content = doc->FirstChildElement("content")->GetText();
-        /* std::cout << "no problem CutCLear" << "\n"; */
-        cppjieba.cut(content, clearWords, stopWords);
-        dealContent(clearWords, docid_int, docFrequency);
-        doc = doc->NextSiblingElement("doc");
-        clearWords.clear();
+        ifs.seekg(_offsetLib[i + 1].first);
+        vector<char> buf(_offsetLib[i + 1].second + 1);
+        ifs.read(buf.data(), _offsetLib[i + 1].second);
+        if (!buf.empty())
+        {
+            XMLDocument xml;
+            XMLError error = xml.Parse(buf.data());        
+            if (error == tinyxml2::XML_SUCCESS)
+            {
+                XMLElement * doc = xml.RootElement();
+                string docid = doc->FirstChildElement("docid")->GetText();
+                int docid_int = std::stoi(docid);
+                string content = doc->FirstChildElement("content")->GetText();
+                cppjieba.cut(content, clearWords);
+                dealContent(clearWords, docid_int, docFrequency);
+                clearWords.clear();
+            }
+        }
     }
-    std::cout << "invertIndex.size() = " << _invertIndexTable.size() << "\n";
+    /* std::cout << "invertIndex.size() = " << _invertIndexTable.size() << "\n"; */
 
     double all_weight = 0;
     set<double> weight;

@@ -28,7 +28,6 @@ unsigned int InetAddress::getport() const
 const struct sockaddr_in * InetAddress::getInetAddressPtr() const
 {
     return &_addr;
-
 }
 
 InetAddress::InetAddress(const struct sockaddr_in& addr)

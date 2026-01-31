@@ -56,7 +56,7 @@ DicProducer::DicProducer(const string& filename, const Configuration * pInstance
             std::cout << fileName << "\n";
             ifstream ifs(fileName);
             ifs.read(buf, 65550);
-            cppjieba.cut(buf, clearWords, stopWords);
+            cppjieba.cut(buf, clearWords);
             if (!clearWords.empty())
             {
                 for (size_t i = 0; i < clearWords.size(); ++i)

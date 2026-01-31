@@ -13,6 +13,7 @@ class WebPage
     friend void Protocol::ProtocolParser::from_json(const json & j, WebPage& web);
 
 public:
+    WebPage();
     WebPage(const string& doc);
     int getDocId() const;
 

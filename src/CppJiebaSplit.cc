@@ -2,18 +2,15 @@
 
 CppJiebaSplit::CppJiebaSplit(const Configuration * config)
 : _config(config)
+, _stopWords(_config->getStopWords())
 , _jieba(_config->getConfig().at("dict_path").c_str(), _config->getConfig().at("model_path").c_str(),
          _config->getConfig().at("user_dict_path"), _config->getConfig().at("idf_path"),
          _config->getConfig().at("stop_word_path"))
 {
 
 }
-/* void CppJiebaSplit::cut(const string& key, vector<string>& words) */
-/* { */
-/*     _jieba.Cut(key, words, true); */
-/* } */
 
-void CppJiebaSplit::cut(const string& key, vector<string>& clearWords, const set<string>& stop_words) const
+void CppJiebaSplit::cut(const string& key, vector<string>& clearWords) const
 {
     vector<string> words;
     /* _jieba.Cut(key, words, true); */
@@ -25,14 +22,14 @@ void CppJiebaSplit::cut(const string& key, vector<string>& clearWords, const set
         {
             word.pop_back();
         }
-        if (stop_words.find(word) == stop_words.end())
+        if (_stopWords.find(word) == _stopWords.end())
         {
             clearWords.push_back(word);
         }
     }
 }
 
-void CppJiebaSplit::cut(const string& key, map<string, int>& clearWords, const set<string>& stop_words) const
+void CppJiebaSplit::cut(const string& key, map<string, int>& clearWords) const
 {
     vector<string> words;
     /* _jieba.Cut(key, words, true); */
@@ -43,7 +40,7 @@ void CppJiebaSplit::cut(const string& key, map<string, int>& clearWords, const s
         {
             word.pop_back();
         }
-        if (stop_words.find(word) == stop_words.end())
+        if (_stopWords.find(word) == _stopWords.end())
         {
             pair<map<string, int>::iterator, bool> p = clearWords.insert({word, 1});
             if (! p.second)

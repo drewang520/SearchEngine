@@ -19,6 +19,8 @@ include_directories(
 add_executable(client
         src/Configuration.cc
         src/ProtocolParser.cc
+        src/WebPage.cc
+        src/tinyxml2.cpp
         src/clientTest.cc)
 
 add_executable(Config_test
@@ -59,9 +61,11 @@ add_executable(WebPageSearch
 add_executable(KeyCommander_test
         src/Configuration.cc
         src/Dictionary.cc
+        src/tinyxml2.cpp
         src/KeyRecommander.cc
         src/CacheManager.cc
         src/ProtocolParser.cc
+        src/WebPage.cc
         src/TimerManager.cc
         src/LRUCache.cc
         src/test_KeyRecommander.cc

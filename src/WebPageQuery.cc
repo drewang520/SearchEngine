@@ -4,16 +4,15 @@
 #include <cstddef>
 #include <fstream>
 #include <sstream>
-#include <set>
 #include <algorithm>
 
 using std::ifstream;
 using std::istringstream;
-using std::set;
 
 WebPageSearch::WebPageSearch(const string& keyword, const Configuration * config)
 : _sought(keyword)
 , _config(config)
+, _webPageSearch(_config)
 , _jieba(_config)
 {
   
@@ -21,48 +20,46 @@ WebPageSearch::WebPageSearch(const string& keyword, const Configuration * config
 
 vector<WebPage> WebPageSearch::doQuery()
 {
-    WebPageQuery webPageQuery(_config);
-    return webPageQuery.doQuery(_sought, _jieba);
+    return _webPageSearch.doQuery(_sought, _jieba);
 }
 
 WebPageQuery::WebPageQuery(const Configuration * config)
 : _config(config)
 {
     ifstream ifs(_config->getConfig().at("invertIndexTable"));
-    string line;
-    string word, docid, weight;
+    string line, word;
+    int docid;
+    double weight;
     while (std::getline(ifs, line))
     {
         istringstream iss(line);
+        vector<pair<int, double>> index;
         iss >> word;
         while (iss >> docid >> weight)
         {
-            _invertIndexLib[word].emplace_back(stoi(docid), stod(weight));
+            index.push_back({docid, weight});
         }
+        _invertIndexLib[word] = index;
     }
     ifs.close();
 
     ifs.open(_config->getConfig().at("newoffset"));
-    string pos, offset;
+    int pos, offset;
     while (std::getline(ifs, line))
     {
         istringstream iss(line);
-        while (iss >> docid >> pos >> offset)
-        {
-            _offsetLib[stoi(docid)].first = stoi(pos);
-            _offsetLib[stoi(docid)].second= stoi(offset);
-        }
+        iss >> docid >> pos >> offset;
+        _offsetLib[docid] = {pos, offset};
     }
     ifs.close();
 }
 
 vector<WebPage> WebPageQuery::doQuery(const string& key, const CppJiebaSplit& jieba)
 {
-    set<string> stopWords = _config->getStopWords();
     vector<string> clearWords;
     vector<WebPage> webPage;
 
-    jieba.cut(key, clearWords, stopWords);
+    jieba.cut(key, clearWords);
     if (clearWords.empty())
     {
         std::cout << "the word is stopWords" << "\n";
@@ -160,7 +157,7 @@ vector<WebPage> WebPageQuery::doQuery(const string& key, const CppJiebaSplit& ji
     ifstream ifs(_config->getConfig().at("newripepage"));    
     for (size_t i = 0; i < stoi(_config->getConfig().at("queryWebPageNum")); ++i)
     {
-        ifs.seekg(_offsetLib[cosins[i].first].first - 1);
+        ifs.seekg(_offsetLib[cosins[i].first].first);
         char * buf = new char[_offsetLib[cosins[i].first].second + 1]();
         ifs.read(buf, _offsetLib[cosins[i].first].second);
         WebPage web(buf);

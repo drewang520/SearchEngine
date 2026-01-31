@@ -56,7 +56,6 @@ string TcpConnection::recvMsg()
 {
     char buf[65535] = {0};
     _socketIO.readLine(buf, sizeof(buf));
-    
     return string(buf);
 }
 
