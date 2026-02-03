@@ -1,9 +1,18 @@
 cmake_minimum_required(VERSION 3.22)
 project(search_engine LANGUAGES CXX)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+project(EmbedPython)
+find_package(Python3 REQUIRED COMPONENTS Development Interpreter)
+
+set(PYBIND11_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/pybind11")
+set(PYBIND11_INCLUDE_DIRS
+    "${PYBIND11_INCLUDE_DIR}"
+    "${PYBIND11_INCLUDE_DIR}/include"
+)
+
 # <----------- set C++ standard ------------>
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
@@ -16,6 +25,16 @@ include_directories(
 #     ${PROJECT_SOURCE_DIR}/src/*.cc
 #     ${PROJECT_SOURCE_DIR}/src/*.cpp
 # )
+
+add_executable(crawl
+        src/crawl/crawl.cc
+        src/tinyxml2.cpp
+        src/crawl/test_crawl.cc
+     )
+target_include_directories(crawl PRIVATE ${Python3_INCLUDE_DIRS}
+                                ${PYBIND11_INCLUDE_DIR})
+target_link_libraries(crawl PRIVATE ${Python3_LIBRARIES})
+
 add_executable(client
         src/Configuration.cc
         src/ProtocolParser.cc
