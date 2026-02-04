@@ -33,13 +33,20 @@ def download_xml(url, save_path=None, headers=None, delay=0):
             print("警告: 抓取的内容不是标准 XML 格式")
 
         if save_path:
-            # 确保目录存在
-            folder = os.path.dirname(save_path)
-            if folder:  # 预防 save_path 只是个文件名的情况
-                os.makedirs(folder, exist_ok=True)
-            with open(save_path, 'wb') as f:
-                f.write(xml_content)
+            # 统一构造完整的目标文件路径
+            full_path = os.path.join("../../raw_data/module2/people_yuliao2/cn", 
+                                     f"{save_path}.xml")
 
+            # 获取该文件所在的目录
+            folder = os.path.dirname(full_path)
+
+            # 创建文件
+            if folder:
+                os.makedirs(folder, exist_ok=True)
+
+            # 统一使用的 full_path 写入文件
+            with open(full_path, "wb") as f:
+                f.write(xml_content)
         return xml_content
 
     except requests.RequestException as e:

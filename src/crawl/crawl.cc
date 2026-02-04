@@ -1,8 +1,10 @@
 #include "crawl.h"
+#include "pybind11.h"
 #include "pybind11/embed.h"
 #include "tinyxml2.h"
 #include <string>
 #include <iostream>
+#include <fstream>
 
 using namespace pybind11;
 
@@ -29,6 +31,18 @@ Crawl_XML::Crawl_XML(const std::string& xmllink)
 
     /* std::cout << "xml content: " << xml_content << "\n"; */
     doPrase(xml_content);
+    for (auto & field : _fields)
+    {
+        std::string link = "http://www.people.com.cn/rss/" + field + ".xml";
+        std::string storefile = "/home/drewang/study/project/search_engine/raw_data/module2/people_yuliao2/cn/" 
+            + field + ".xml";
+        pybind11::module_ cale = pybind11::module_::import("obtain_xml");
+        pybind11::object raw_xml = cale.attr("download_xml")(link, field, 0, 120);
+        xml_content = raw_xml.cast<std::string>();
+        store(storefile, xml_content);
+        std::cout << "xml_content.size = " << xml_content.size() << "\n";
+        /* std::cout << "wait 120s : start crawl > " << "\n"; */
+    }
 }
 
 void Crawl_XML::doPrase(const std::string& xml_content)
@@ -70,4 +84,11 @@ void Crawl_XML::print()
         std::cout << field << "\n";
     }
 }
+
+void Crawl_XML::store(const std::string& filename, const std::string& xml)
+{
+    std::ofstream ofs(filename);
+    ofs.write(xml.c_str(), xml.size());
+}
+
 

@@ -10,6 +10,8 @@ public:
     Crawl_XML(const std::string&);
     void doPrase(const std::string&);
     void print();
+    void store(const std::string&, const std::string&);
+
 private:
     void splitLink(const std::string&);
 
