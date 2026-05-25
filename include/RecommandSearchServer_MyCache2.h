@@ -11,6 +11,7 @@
 #include "Logger.h"
 #include "KeyRecommander.h"
 #include "WebPageSearcher.h"
+#include "AISearcher.h"
 #include <exception>
 #include <functional>
 #include <string>
@@ -56,6 +57,11 @@ public:
                                  ProtocolParser::vecWebToJson(webPageSearch.doQuery()));            
             /* m_msg.data = _cache.CacheTransaction(m_msg.data, _webPageSearch); */
             LOG_DEBUG("WEBPAGE_SEARCH response bytes=" + std::to_string(m_msg.data.size()));
+        }
+        else if (m_msg.id == Protocol::AI_SEARCH)
+        {
+            AISearcher aiSearcher(m_msg.data, m_config);
+            m_msg.data = aiSearcher.doQuery();
         }
         else
         {

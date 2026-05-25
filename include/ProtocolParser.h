@@ -17,7 +17,8 @@ namespace Protocol {
 enum Recommand_Search
 {
     KEY_RECOMMAND,
-    WEBPAGE_SEARCH
+    WEBPAGE_SEARCH,
+    AI_SEARCH
 };
 
 struct Message

@@ -57,3 +57,7 @@ string WebPage::getDoc() const
     return m_doc;
 }
 
+string WebPage::getContent() const
+{
+    return m_context;
+}

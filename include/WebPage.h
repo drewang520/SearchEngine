@@ -20,6 +20,7 @@ public:
     string getLink() const;
     string getDoc() const;
     string getTitle() const;
+    string getContent() const;
 
 private:
     string m_doc;

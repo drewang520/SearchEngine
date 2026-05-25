@@ -17,6 +17,52 @@ using namespace Protocol;
 using std::cin;
 using std::cout;
 using std::string;
+
+string RecvString(int fd)
+{
+    vector<char> buffer(65536);
+    ssize_t nread = recv(fd, buffer.data(), buffer.size(), 0);
+    if (nread <= 0)
+    {
+        return {};
+    }
+    return string(buffer.data(), static_cast<size_t>(nread));
+}
+
+void SendMessage(int fd, Message& msg)
+{
+    json j;
+    ProtocolParser::to_json(j, msg);
+    string message = ProtocolParser::JsonToString(j);
+    message.append("\n");
+    send(fd, message.data(), message.size(), 0);
+}
+
+void PrintAIAnswer(const json& j)
+{
+    std::cout << "\nAI answer:\n" << j.value("answer", "") << "\n";
+
+    if (j.contains("sources") && j["sources"].is_array())
+    {
+        std::cout << "\nSources:\n";
+        for (const auto& item : j["sources"])
+        {
+            std::cout << "[" << item.value("index", 0) << "] "
+                      << item.value("title", "") << "\n"
+                      << item.value("link", "") << "\n";
+        }
+    }
+
+    if (j.contains("related_queries") && j["related_queries"].is_array())
+    {
+        std::cout << "\nRelated queries:\n";
+        for (const auto& item : j["related_queries"])
+        {
+            std::cout << "- " << item.get<string>() << "\n";
+        }
+    }
+    std::cout << "\n";
+}
  
 void LoadHtml(json & j)
 {
@@ -74,24 +120,44 @@ void test(const std::string& configPath)
 	printf("conn has connected!...\n");
 
     Message msg;
-    json j; 
+    json j;
 	while(1) 
     {
 		string line;
-		cout<< ">> pls input some message:";
-		getline(cin, line);
+		cout<< ">> pls input some message, or use /ai question:";
+        if (!getline(cin, line))
+        {
+            break;
+        }
+
+        if (line.rfind("/ai ", 0) == 0)
+        {
+            msg.id = Protocol::AI_SEARCH;
+            msg.data = line.substr(4);
+            msg.length = msg.data.size();
+            SendMessage(clientfd, msg);
+
+            string response = RecvString(clientfd);
+            if (response.empty())
+            {
+                std::cout << "server closed connection\n";
+                break;
+            }
+            PrintAIAnswer(ProtocolParser::doParse(response));
+            continue;
+        }
+
         msg.id = Protocol::KEY_RECOMMAND;
         msg.data = line;
         msg.length = line.size();
-        ProtocolParser::to_json(j, msg);
-        string message = ProtocolParser::JsonToString(j);
-        message.append("\n");
-		//1. 客户端先发数据
-		send(clientfd, message.data(), message.size(), 0);
+        SendMessage(clientfd, msg);
 
-        vector<char> recvmsg(4096);
-		recv(clientfd, recvmsg.data(), recvmsg.size(), 0);
-        string word(recvmsg.begin(), recvmsg.end());
+        string word = RecvString(clientfd);
+        if (word.empty())
+        {
+            std::cout << "server closed connection\n";
+            break;
+        }
         j = ProtocolParser::doParse(word);
         vector<string> words;
         ProtocolParser::jsonToVec(j, words);
@@ -110,18 +176,23 @@ void test(const std::string& configPath)
         msg.data = line;
         msg.length = line.size();
 
-        ProtocolParser::to_json(j, msg);
-        message = ProtocolParser::JsonToString(j);
-        message.append("\n");
-		send(clientfd, message.data(), message.size(), 0);
-        /* recvmsg.clear(); */
-        vector<char> recvmsg2(4096);
+        SendMessage(clientfd, msg);
         vector<WebPage> webWords;
         /* bzero(buff, sizeof(buff)); */
-		recv(clientfd, recvmsg2.data(), recvmsg2.size(), 0);
-        string Web(recvmsg2.begin(), recvmsg2.end());
-        json j = ProtocolParser::doParse(Web);        
+        string Web = RecvString(clientfd);
+        if (Web.empty())
+        {
+            std::cout << "server closed connection\n";
+            break;
+        }
+        j = ProtocolParser::doParse(Web);        
         /* std::cout << "recv web from server: " << "\n"; */
+        if (!j.is_array())
+        {
+            /* std::cout << "not found" << "\n"; */
+            system("google-chrome file:///home/drewang/study/project/search_engine/data/html/error.html");
+            continue;
+        }
         ProtocolParser::jsonToVecWeb(j, webWords);
         std::cout << "webWords.size()" << webWords.size() << "\n";
         for (auto &elem :webWords)
@@ -129,12 +200,6 @@ void test(const std::string& configPath)
             std::cout << "Web: \n" << "title: " << elem.getTitle() << "\n"
                 << "link: " << elem.getLink() << "\n"
                 << "\n";
-        }
-        if (!j.is_array())
-        {
-            /* std::cout << "not found" << "\n"; */
-            system("google-chrome file:///home/drewang/study/project/search_engine/data/html/error.html");
-            continue;
         }
         LoadHtml(j);
 	}

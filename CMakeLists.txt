@@ -5,6 +5,25 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(EmbedPython)
 
 find_package(Python3 REQUIRED COMPONENTS Development Interpreter)
+find_package(CURL QUIET)
+if (NOT CURL_FOUND)
+    find_path(CURL_INCLUDE_DIR
+        NAMES curl/curl.h
+        PATHS /usr/local/include /usr/include
+    )
+    find_library(CURL_LIBRARY
+        NAMES curl
+        PATHS /usr/local/lib /usr/lib /usr/lib/x86_64-linux-gnu
+    )
+    if (CURL_INCLUDE_DIR AND CURL_LIBRARY)
+        set(CURL_FOUND TRUE)
+        add_library(CURL::libcurl UNKNOWN IMPORTED)
+        set_target_properties(CURL::libcurl PROPERTIES
+            IMPORTED_LOCATION "${CURL_LIBRARY}"
+            INTERFACE_INCLUDE_DIRECTORIES "${CURL_INCLUDE_DIR}"
+        )
+    endif()
+endif()
 find_path(LOG4CPP_INCLUDE_DIR
     NAMES log4cpp/Category.hh
     PATHS /usr/local/include /usr/include
@@ -126,6 +145,9 @@ add_executable(RSserver_Cache2
         src/tinyxml2.cpp
         src/KeyRecommander.cc
         src/Dictionary.cc
+        src/AISearcher.cc
+        src/AIClient.cc
+        src/HybridRanker.cc
         src/WebPageQuery.cc
         src/WebPage.cc
         src/CppJiebaSplit.cc
@@ -148,6 +170,13 @@ add_executable(RSserver_Cache2
     )
 
 target_link_libraries(RSserver_Cache2 PRIVATE ${LOG4CPP_LIBRARY})
+if (CURL_FOUND)
+    message(STATUS "libcurl enabled for AIClient")
+    target_compile_definitions(RSserver_Cache2 PRIVATE HAVE_CURL)
+    target_link_libraries(RSserver_Cache2 PRIVATE CURL::libcurl)
+else()
+    message(STATUS "libcurl not found, AIClient will use local plain HTTP fallback")
+endif()
 
 add_executable(RSserver_Cache
         src/Configuration.cc
