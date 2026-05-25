@@ -2,10 +2,10 @@
 
 int main(int argc, char * argv[])
 {
-    Configuration * config = Configuration::createpInstance();
+    Configuration& config = Configuration::createpInstance(argc > 1 ? argv[1] : "../config/config.json");
     ConnectionOptions connection;
-    connection.host = config->getConfig().at("host");
-    connection.port = std::stoi(config->getConfig().at("redis_port"));
+    connection.host = config.getConfig().at("host");
+    connection.port = std::stoi(config.getConfig().at("redis_port"));
     Redis myredis(connection);
     RecommandSearchServer RSserver(config, myredis);
     RSserver.start();

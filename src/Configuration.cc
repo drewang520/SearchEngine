@@ -1,97 +1,101 @@
 #include "Configuration.h"
 #include "nlohmann/json.hpp"
+#include <algorithm>
 #include <fstream>
-#include <filesystem>
+#include <stdexcept>
 
-using std::ifstream;
-using json = nlohmann::json;
-
-Configuration * Configuration::pInstance = nullptr;
-pthread_once_t Configuration::once = PTHREAD_ONCE_INIT;
-string Configuration::_filepath = "../config/config.json";
-
-Configuration::Configuration(const string& config_path)
+namespace
 {
-    auto file_size = std::filesystem::file_size(config_path);
-    ifstream ifs(config_path);
-    /* char * buf = new char[file_size](); */
-    std::vector<char> buf(file_size);
-    ifs.read(buf.data(), file_size);
-    json file = json::parse(buf);    
+std::string jsonValueToString(const nlohmann::json& value)
+{
+    if (value.is_string())
+    {
+        return value.get<std::string>();
+    }
+    if (value.is_number_integer())
+    {
+        return std::to_string(value.get<int>());
+    }
+    if (value.is_number_unsigned())
+    {
+        return std::to_string(value.get<unsigned int>());
+    }
+    if (value.is_number_float())
+    {
+        return std::to_string(value.get<double>());
+    }
+
+    throw std::runtime_error("unsupported config value type: " + value.dump());
+}
+
+void loadStopWordsFromFile(const std::string& filename, std::set<std::string>& stopWords)
+{
+    std::ifstream ifs(filename);
+    if (!ifs)
+    {
+        throw std::runtime_error("failed to open stop words file: " + filename);
+    }
+
+    std::string line;
+    while (std::getline(ifs, line))
+    {
+        line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
+        if (!line.empty())
+        {
+            stopWords.insert(line);
+        }
+    }
+}
+}
+
+Configuration::Configuration(const std::string& config_path)
+{
+    std::ifstream ifs(config_path);
+    if (!ifs)
+    {
+        throw std::runtime_error("failed to open config file: " + config_path);
+    }
+
+    nlohmann::json file;
+    ifs >> file;
+    if (!file.is_object())
+    {
+        throw std::runtime_error("config root must be a JSON object: " + config_path);
+    }
+
     for (const auto &[key, value]: file.items())
     {
-        if (value.is_string())
-        {
-            _config[key] = value.get<std::string>();
-        }
-        else if (value.is_number())
-        {
-            _config[key] = std::to_string(value.get<int>());
-        }
+        m_config[key] = jsonValueToString(value);
     }
-    /* delete [] buf; */
-    LoadStopWords();
+    loadStopWords();
 }
 
-const map<string, string>& Configuration::getConfig() const
+const std::map<std::string, std::string>& Configuration::getConfig() const
 {
-    return _config;
+    return m_config;
 }
 
-void Configuration::LoadStopWords()
+void Configuration::loadStopWords()
 {
-    ifstream ifs(_config.at("stop_words_en"));
-    string line;
-    while (std::getline(ifs, line))
+    const char* stopWordsConfigKeys[] = {
+        "stop_words_en",
+        "stop_words_cn",
+        "stop_word_path",
+    };
+
+    for (const char* key : stopWordsConfigKeys)
     {
-        if (!line.empty() && line.back() == '\r')
-        {
-            line.pop_back();
-        }
-        _stopWords.insert(line);
-    }
-    ifs.close();
-    ifs.open(_config.at("stop_words_cn")); 
-    while (std::getline(ifs, line))
-    {
-        // 删除行内所有的\r
-        line.erase(remove(line.begin(), line.end(), '\r'), line.end());
-        _stopWords.insert(line);
-    }
-    ifs.close();
-    ifs.open(_config.at("stop_word_path"));
-    while (std::getline(ifs, line))
-    {
-        // 删除行内所有的\r
-        line.erase(remove(line.begin(), line.end(), '\r'), line.end());
-        _stopWords.insert(line);
-    }
-    ifs.close();
-}
-
-const set<string>& Configuration::getStopWords() const
-{
-    return _stopWords;
-}
-
-Configuration * Configuration::createpInstance()
-{
-    pthread_once(&once, init);
-    return pInstance;
-}
-
-void Configuration::init()
-{
-    pInstance = new Configuration(_filepath);
-    atexit(destory);
-}
-
-void Configuration::destory()
-{
-    if (pInstance)
-    {
-        delete pInstance;
-        pInstance = nullptr;
+        loadStopWordsFromFile(m_config.at(key), m_stopWords);
     }
 }
 
+const std::set<std::string>& Configuration::getStopWords() const
+{
+    return m_stopWords;
+}
+
+Configuration& Configuration::createpInstance(const std::string& config_path)
+{
+    static Configuration instance(config_path);
+    return instance;
+}

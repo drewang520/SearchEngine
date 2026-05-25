@@ -26,7 +26,7 @@ public:
     virtual ~CacheUpdateTask() {}
     void process() override
     {
-        CacheManager::createCacheManger()->PeriodicalUpdateCache();        
+        CacheManager::createCacheManger().PeriodicalUpdateCache();        
     }
 };
 
@@ -37,8 +37,8 @@ public:
     virtual ~WriteCacheTask() {}
     void process() override
     {
-        CacheManager::createCacheManger()->getMainCache().writeToFile(
-                 Configuration::createpInstance()->getConfig().at("cacheData"));
+        CacheManager::getMainCache().writeToFile(
+                 Configuration::createpInstance().getConfig().at("cacheData"));
     }
 };
 
@@ -72,17 +72,17 @@ private:
     ~TimerManager() = default;
 
 private:
-    int _timefd;
-    int _interval;//间隔时间
-    int _writeCacheTime;
-    int _delay; //首次到期时间
-    int _writefd;
-    int _writeCachedelay;
-    int _writeCacheinterval;
-    bool _isStarted;
-    std::map<int, vector<TimerCallback>> _timerCallbacks;
-    vector<TimerTask *> _wheelList;
-    static TimerManager * _timerManager;
+    int m_timefd;
+    int m_interval;//间隔时间
+    int m_writeCacheTime;
+    int m_delay; //首次到期时间
+    int m_writefd;
+    int m_writeCachedelay;
+    int m_writeCacheinterval;
+    bool m_isStarted;
+    std::map<int, vector<TimerCallback>> m_timerCallbacks;
+    vector<TimerTask *> m_wheelList;
+    static TimerManager * m_timerManager;
     static pthread_once_t once_init;
 };
 

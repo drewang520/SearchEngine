@@ -3,20 +3,16 @@
 
 #include "LRUCache.h"
 #include <mutex>
-#include <pthread.h>
 #include <vector>
 #include <string>
 
 class LRUCache;
-using std::vector;
-using std::string;
 
 class CacheManager
 {
 public:
-    static CacheManager * createCacheManger(); 
+    static CacheManager& createCacheManger(); 
 
-    static void init();
     LRUCache & getCache(size_t);
     std::mutex & getMutex(size_t);
     void PeriodicalUpdateCache();
@@ -30,17 +26,15 @@ private:
     CacheManager& operator=(CacheManager&& cacheManager) = delete;
     ~CacheManager() = default;
 
-    static void destory();
+    size_t mergePendingUpdates(LRUCache& cache, LRUCache& mainCache);
+    void writeMainCacheIfNeeded(LRUCache& mainCache);
 
 private:
-    vector<LRUCache> _caches;    
-    vector<std::mutex> _cacheMutexs;
-    size_t _cacheNum;
-
-    static LRUCache _mainCache;
-    static std::mutex _mutex;
-    static CacheManager * _pCacheManager;
-    static pthread_once_t  _pthreadInit;
+    size_t m_cacheNum;
+    int m_writeCacheDelay;
+    std::string m_cacheDataPath;
+    std::vector<LRUCache> m_caches;    
+    std::vector<std::mutex> m_cacheMutexs;
 };
 
 

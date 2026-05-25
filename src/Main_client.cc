@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-int main() {
+int main(int argc, char * argv[]) {
     const int CLIENT_NUM = 50;
 
     std::vector<int> write_fds;
@@ -29,7 +29,14 @@ int main() {
             dup2(fd[0], STDIN_FILENO);    // stdin ← pipe
             close(fd[0]);
 
-            execl("../build/client", "client", nullptr);
+            if (argc > 1)
+            {
+                execl("../build/client", "client", argv[1], nullptr);
+            }
+            else
+            {
+                execl("../build/client", "client", nullptr);
+            }
             perror("execl");
             _exit(1);
         } else {
@@ -66,4 +73,3 @@ int main() {
 
     return 0;
 }
-

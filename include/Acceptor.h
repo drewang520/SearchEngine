@@ -5,12 +5,10 @@
 #include "Socket.h"
 #include <string>
 
-using std::string;
-
 class Acceptor
 {
 public:
-    Acceptor(const string& ip, unsigned int port);
+    Acceptor(const std::string& ip, unsigned int port);
     ~Acceptor();
 
     void ready();
@@ -20,11 +18,11 @@ public:
     void listen();
 
     int accept();
-
     int getfd() const;
+    
 private:
-    Socket _socket;
-    InetAddress _addr;
+    Socket m_socket;
+    InetAddress m_addr;
 };
 
 

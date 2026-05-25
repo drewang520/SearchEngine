@@ -6,21 +6,19 @@
 #include <arpa/inet.h>
 #include <string>
 
-using std::string;
-
 class InetAddress
 {
 public:
-    InetAddress(const string& ip, unsigned int port);
+    InetAddress(const std::string& ip, unsigned int port);
     InetAddress(const struct sockaddr_in& addr);
     ~InetAddress();
 
-    string getip() const;
+    std::string getip() const;
     unsigned int getport() const;
     const struct sockaddr_in * getInetAddressPtr() const;
 
 private:
-    struct sockaddr_in _addr;
+    struct sockaddr_in m_addr;
 };
 
 #endif

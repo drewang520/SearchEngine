@@ -17,26 +17,26 @@ using std::unordered_map;
 class WebPageQuery
 {
 public:
-    WebPageQuery(const Configuration * config);
+    WebPageQuery(const Configuration& config);
     vector<WebPage> doQuery(const string& key, const CppJiebaSplit& jieba);
 
 private:
-    unordered_map<string, vector<pair<int, double>>> _invertIndexLib;
-    unordered_map<int, pair<int, int>> _offsetLib;
-    const Configuration * _config;
+    unordered_map<string, vector<pair<int, double>>> m_invertIndexLib;
+    unordered_map<int, pair<int, int>> m_offsetLib;
+    const Configuration& m_config;
 };
 
 class WebPageSearch
 {
 public:
-    WebPageSearch(const string& keyword, const Configuration * config);
+    WebPageSearch(const string& keyword, const Configuration& config);
     vector<WebPage> doQuery();
 
 private:
-    string _sought;
-    const Configuration * _config;
-    WebPageQuery _webPageSearch;
-    CppJiebaSplit _jieba;
+    string m_sought;
+    const Configuration& m_config;
+    WebPageQuery& m_webPageSearch;
+    CppJiebaSplit& m_jieba;
 };
 
 #endif

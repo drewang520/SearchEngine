@@ -3,7 +3,24 @@ project(search_engine LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(EmbedPython)
+
 find_package(Python3 REQUIRED COMPONENTS Development Interpreter)
+find_path(LOG4CPP_INCLUDE_DIR
+    NAMES log4cpp/Category.hh
+    PATHS /usr/local/include /usr/include
+)
+
+find_library(LOG4CPP_LIBRARY
+    NAMES log4cpp
+    PATHS /usr/local/lib /usr/lib /usr/lib/x86_64-linux-gnu
+)
+
+if (NOT LOG4CPP_INCLUDE_DIR OR NOT LOG4CPP_LIBRARY)
+    message(FATAL_ERROR "log4cpp not found")
+endif()
+
+include_directories(${LOG4CPP_INCLUDE_DIR})
+file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/logs)
 
 set(PYBIND11_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/pybind11")
 set(PYBIND11_INCLUDE_DIRS
@@ -71,17 +88,20 @@ add_executable(PageProducer_test
 add_executable(WebPageSearch
         src/Configuration.cc
         src/WebPageQuery.cc
+        src/Logger.cc
         src/CppJiebaSplit.cc
         src/WebPage.cc
         src/tinyxml2.cpp
         src/test_WebPageSearch.cc
     )
+target_link_libraries(WebPageSearch PRIVATE ${LOG4CPP_LIBRARY})
 
 add_executable(KeyCommander_test
         src/Configuration.cc
         src/Dictionary.cc
         src/tinyxml2.cpp
         src/KeyRecommander.cc
+        src/Logger.cc
         src/CacheManager.cc
         src/ProtocolParser.cc
         src/WebPage.cc
@@ -89,6 +109,7 @@ add_executable(KeyCommander_test
         src/LRUCache.cc
         src/test_KeyRecommander.cc
     )
+target_link_libraries(KeyCommander_test PRIVATE ${LOG4CPP_LIBRARY})
 
 add_executable(dictionary
         src/Dictionary.cc
@@ -98,6 +119,7 @@ add_executable(dictionary
 
 add_executable(RSserver_Cache2
         src/Configuration.cc
+        src/Logger.cc
         src/LRUCache.cc
         src/CacheManager.cc
         src/TimerManager.cc
@@ -125,8 +147,11 @@ add_executable(RSserver_Cache2
         src/Reactor/Condition.cc
     )
 
+target_link_libraries(RSserver_Cache2 PRIVATE ${LOG4CPP_LIBRARY})
+
 add_executable(RSserver_Cache
         src/Configuration.cc
+        src/Logger.cc
         src/LRUCache.cc
         src/CacheManager.cc
         src/TimerManager.cc
@@ -153,9 +178,11 @@ add_executable(RSserver_Cache
         src/Reactor/Acceptor.cc
         src/Reactor/Condition.cc
     )
+target_link_libraries(RSserver_Cache PRIVATE ${LOG4CPP_LIBRARY})
 
 add_executable(RSserver_Myredis
         src/Configuration.cc
+        src/Logger.cc
         src/MyRedis.cc
         src/CacheManager.cc
         src/LRUCache.cc
@@ -183,13 +210,15 @@ add_executable(RSserver_Myredis
         src/Reactor/Acceptor.cc
         src/Reactor/Condition.cc
     )
+target_link_libraries(RSserver_Myredis PRIVATE ${LOG4CPP_LIBRARY})
+
 
 # <------------ add hiredis dependency --------------->
 find_path(HIREDIS_HEADER hiredis)
 target_include_directories(RSserver_Myredis PUBLIC ${HIREDIS_HEADER})
 
 find_library(HIREDIS_LIB hiredis)
-target_link_libraries(RSserver_Myredis ${HIREDIS_LIB})
+target_link_libraries(RSserver_Myredis PRIVATE ${HIREDIS_LIB})
 
 # # <------------ add redis-plus-plus dependency -------------->
 # # NOTE: this should be *sw* NOT *redis++*
@@ -197,5 +226,4 @@ find_path(REDIS_PLUS_PLUS_HEADER sw)
 target_include_directories(RSserver_Myredis PUBLIC ${REDIS_PLUS_PLUS_HEADER})
 
 find_library(REDIS_PLUS_PLUS_LIB redis++)
-target_link_libraries(RSserver_Myredis ${REDIS_PLUS_PLUS_LIB})
-
+target_link_libraries(RSserver_Myredis PRIVATE ${REDIS_PLUS_PLUS_LIB})

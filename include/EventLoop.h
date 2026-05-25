@@ -11,14 +11,9 @@
 #include <memory>
 #include <functional>
 
-using std::vector;
-using std::map;
-using std::shared_ptr;
-using std::function;
-
-using TcpConnectionPtr = shared_ptr<TcpConnection>;
-using TcpConnectionCallback = function<void (const TcpConnectionPtr& )>; 
-using Functor = function<void ()>;
+using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
+using TcpConnectionCallback = std::function<void (const TcpConnectionPtr& )>; 
+using Functor = std::function<void ()>;
 
 class EventLoop
 {
@@ -29,7 +24,7 @@ public:
     void loop();
     void unloop();
 
-    int createEpollFd();
+    int  createEpollFd();
     void addEpollFd(int fd);
     void delEpollFd(int fd);
     void WaitEpoll();
@@ -37,7 +32,7 @@ public:
     void handleMessage(int netfd);
 
     void runEventLoop(Functor &&_cb);
-    int createEventFd();
+    int  createEventFd();
     void handleEventRead();
     void wakeup();
     void doFunctors();
@@ -48,26 +43,19 @@ public:
     
 
 private:
-    int _epfd;
-    int _evtfd;
-    bool _isloop;
-    Acceptor & _acceptor;
-    vector<struct epoll_event> _readyEvent;    
-    map<int, TcpConnectionPtr> _tcpConns;
+    int m_epfd;
+    int m_evtfd;
+    bool m_isloop;
+    Acceptor & m_acceptor;
+    std::vector<struct epoll_event> m_readyEvent;    
+    std::map<int, TcpConnectionPtr> m_tcpConns;
 
-    vector<Functor> _functor;
-    MutexLock _mutex;
+    std::vector<Functor> m_functor;
+    MutexLock m_mutex;
 
-    TcpConnectionCallback _connectionCb;
-    TcpConnectionCallback _messageCb;
-    TcpConnectionCallback _closeCb;
+    TcpConnectionCallback m_connectionCb;
+    TcpConnectionCallback m_messageCb;
+    TcpConnectionCallback m_closeCb;
 };
-
-
-
-
-
-
-
 
 #endif

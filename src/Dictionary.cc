@@ -7,15 +7,15 @@ using std::ifstream;
 using std::ofstream;
 using std::istringstream;
 
-Dictionary::Dictionary(const Configuration * config)
-: _config(config)
+Dictionary::Dictionary(const Configuration& config)
+: m_config(config)
 {
     init();
 }
 
 void Dictionary::init()
 {
-    ifstream ifs(_config->getConfig().at("dic.dat"));
+    ifstream ifs(m_config.getConfig().at("dic.dat"));
     string line;
     string word;
     int num;
@@ -23,17 +23,17 @@ void Dictionary::init()
     {
         istringstream iss(line);
         iss >> word >> num;
-        _dict.push_back(std::make_pair(word, num));
+        m_dict.push_back(std::make_pair(word, num));
     }
     ifs.close();
-    ifs.open(_config->getConfig().at("dicIndex.dat"));
+    ifs.open(m_config.getConfig().at("dicIndex.dat"));
     while (std::getline(ifs, line))
     {
         istringstream iss(line);
         iss >> word;
         while (iss >> num)
         {
-            _index[word].insert(num);
+            m_index[word].insert(num);
         }
     }
     ifs.close();
@@ -41,11 +41,20 @@ void Dictionary::init()
 
 vector<pair<string, int>> & Dictionary::getDict()
 {
-    return _dict;
+    return m_dict;
 }
 
 map<string, set<int>> & Dictionary::getIndex()
 {
-    return _index;
+    return m_index;
 }
 
+const vector<pair<string, int>> & Dictionary::getDict() const
+{
+    return m_dict;
+}
+
+const map<string, set<int>> & Dictionary::getIndex() const
+{
+    return m_index;
+}

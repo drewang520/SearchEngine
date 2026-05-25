@@ -2,6 +2,7 @@
 #include "CacheManager.h"
 #include "Configuration.h"
 #include "LRUCache.h"
+#include "Logger.h"
 #include <unistd.h>
 #include <cerrno>
 #include <cstdint>
@@ -13,42 +14,42 @@
 #include <stdlib.h>
 #include <iostream>
 
-TimerManager * TimerManager::_timerManager = nullptr;
+TimerManager * TimerManager::m_timerManager = nullptr;
 pthread_once_t TimerManager::once_init = PTHREAD_ONCE_INIT;
 
 TimerManager * TimerManager::createTimerManager()
 {
     pthread_once(&once_init, init);
-    return _timerManager;
+    return m_timerManager;
 }
 
 void TimerManager::destory()
 {
-    if (_timerManager)
+    if (m_timerManager)
     {
-        delete _timerManager;
-        _timerManager = nullptr;
+        delete m_timerManager;
+        m_timerManager = nullptr;
     }
 }
 
 void TimerManager::init()
 {
-    _timerManager = new TimerManager();
+    m_timerManager = new TimerManager();
     atexit(destory);
 }
 
 TimerManager::TimerManager()
-: _timefd(createTimerfd())
-, _writefd(createTimerfd())
-, _isStarted(false)
-, _writeCacheTime(0)
-, _delay(std::stoi(Configuration::createpInstance()->getConfig().at("delay")))
-, _interval(std::stoi(Configuration::createpInstance()->getConfig().at("interval")))
-, _writeCachedelay(std::stoi(Configuration::createpInstance()->getConfig().at("writeCachedelay")))
-, _writeCacheinterval(std::stoi(Configuration::createpInstance()->getConfig().at("writeCacheinterval")))
+: m_timefd(createTimerfd())
+, m_writefd(createTimerfd())
+, m_isStarted(false)
+, m_writeCacheTime(0)
+, m_delay(std::stoi(Configuration::createpInstance().getConfig().at("delay")))
+, m_interval(std::stoi(Configuration::createpInstance().getConfig().at("interval")))
+, m_writeCachedelay(std::stoi(Configuration::createpInstance().getConfig().at("writeCachedelay")))
+, m_writeCacheinterval(std::stoi(Configuration::createpInstance().getConfig().at("writeCacheinterval")))
 {
-    _timerCallbacks[_timefd] = std::vector<TimerCallback>();
-    _timerCallbacks[_writefd] = std::vector<TimerCallback>();
+    m_timerCallbacks[m_timefd] = std::vector<TimerCallback>();
+    m_timerCallbacks[m_writefd] = std::vector<TimerCallback>();
 }
 
 int TimerManager::createTimerfd()
@@ -56,19 +57,19 @@ int TimerManager::createTimerfd()
     int timerfd = timerfd_create(CLOCK_REALTIME, 0);    
     if (-1 == timerfd)
     {
-        perror("timerfd create");
+        LOG_ERROR("timerfd_create failed");
     }
     return timerfd;
 }
 
 int TimerManager::getWriteCacheTime()
 {
-    return _writeCacheTime;
+    return m_writeCacheTime;
 }
 
 void TimerManager::clearCacheTime()
 {
-    _writeCacheTime = 0;
+    m_writeCacheTime = 0;
 }
 
 void TimerManager::setTimerfd(int fd, int delay, int interval)
@@ -81,32 +82,34 @@ void TimerManager::setTimerfd(int fd, int delay, int interval)
     int ret = timerfd_settime(fd, 0, &itimer, nullptr);
     if (-1 == ret)
     {
-        perror("timerfd settime");
+        LOG_ERROR("timerfd_settime failed fd=" + std::to_string(fd));
     }
 }
 
 void TimerManager::start()
 {
+    LOG_INFO("timer manager start delay=" + std::to_string(m_delay)
+             + " interval=" + std::to_string(m_interval));
     struct pollfd fds;       
-    fds.fd = _timefd;
+    fds.fd = m_timefd;
     fds.events = POLLIN;
-    /* fds[0].fd = _timefd; */
+    /* fds[0].fd = m_timefd; */
     /* fds[0].events = POLLIN; */
     
-    /* fds[1].fd = _writefd; */
+    /* fds[1].fd = m_writefd; */
     /* fds[1].events = POLLIN; */
     CacheUpdateTask cacheUpdatetask;
     /* WriteCacheTask writeCacheTask; */
-    _timerManager->attach(&cacheUpdatetask);
-    /* _timerManager->attach(&writeCacheTask); */
-    /* registerTimer(_timefd, std::bind(&CacheManager::PeriodicalUpdateCache, CacheManager::createCacheManger())); */
-    /* registerTimer(_writefd, std::bind(&LRUCache::writeToFile, CacheManager::getMainCache(), */ 
-    /*                                              Configuration::createpInstance()->getConfig().at("cacheData"))); */
-    setTimerfd(_timefd, _delay, _interval);
-    /* setTimerfd(fds[1].fd, _writeCachedelay, _writeCacheinterval); */
+    m_timerManager->attach(&cacheUpdatetask);
+    /* m_timerManager->attach(&writeCacheTask); */
+    /* registerTimer(m_timefd, std::bind(&CacheManager::PeriodicalUpdateCache, CacheManager::createCacheManger())); */
+    /* registerTimer(m_writefd, std::bind(&LRUCache::writeToFile, CacheManager::getMainCache(), */ 
+    /*                                              Configuration::createpInstance().getConfig().at("cacheData"))); */
+    setTimerfd(m_timefd, m_delay, m_interval);
+    /* setTimerfd(fds[1].fd, m_writeCachedelay, m_writeCacheinterval); */
     
-    _isStarted = true;
-    while (_isStarted)
+    m_isStarted = true;
+    while (m_isStarted)
     {
         int nready = poll(&fds, 1, 5000);
         if (-1 == nready && errno == EINTR)
@@ -115,7 +118,7 @@ void TimerManager::start()
         }
         else if (-1 == nready)
         {
-            perror("-1 == nready");
+            LOG_ERROR("timer poll failed");
             return;
         }
         else if (0 == nready)
@@ -126,26 +129,28 @@ void TimerManager::start()
         {
             if (fds.revents == POLLIN)
             {
-                _writeCacheTime += _interval;
-                handleRead(_timefd);
-                for (auto & task : _wheelList)
+                m_writeCacheTime += m_interval;
+                handleRead(m_timefd);
+                for (auto & task : m_wheelList)
                 {
-                    std::cout << "update caches" <<  "\n";
+                    LOG_INFO("timer triggered cache update elapsed="
+                             + std::to_string(m_writeCacheTime));
                     task->process();
-                    CacheManager::createCacheManger()->getMainCache().getCacheElem();            
+                    LOG_DEBUG("main cache size="
+                              + std::to_string(CacheManager::getMainCache().getResultList().size()));            
                 }
-                /* for (auto & timerCallback: _timerCallbacks[fds[0].fd]) */
+                /* for (auto & timerCallback: m_timerCallbacks[fds[0].fd]) */
                 /* { */
                 /*     std::cout << "update caches" <<  "\n"; */
                 /*     /1* task->process(); *1/ */
                 /*     timerCallback(); */
-                /*     CacheManager::createCacheManger()->getMainCache().getCacheElem(); */            
+                /*     CacheManager::getMainCache().getCacheElem(); */            
                 /* } */
             }
             /* else if (fds[1].revents == POLLIN) */
             /* { */
             /*     handleRead(fds[0].fd); */
-            /*     for (auto & writeCallback : _timerCallbacks[fds[1].fd]) */
+            /*     for (auto & writeCallback : m_timerCallbacks[fds[1].fd]) */
             /*     { */
             /*         std::cout << "write Cache to dask" << "\n"; */
             /*         writeCallback(); */
@@ -159,58 +164,58 @@ void TimerManager::start()
 void TimerManager::handleRead(int fd)
 {
     uint64_t value;
-    int ret = read(_timefd, &value, sizeof(value));
+    int ret = read(m_timefd, &value, sizeof(value));
     if (ret != sizeof(value))
     {
-        perror("read");
+        LOG_ERROR("timerfd read failed");
         return;
     }
 }
 
 void TimerManager::stop()
 {
-    _isStarted = false;
-    setTimerfd(_timefd, 0, 0);
+    LOG_INFO("timer manager stop");
+    m_isStarted = false;
+    setTimerfd(m_timefd, 0, 0);
     return;
 }
 
 void TimerManager::registerTimer(int fd, TimerCallback timer)
 {
-    auto iter = _timerCallbacks.find(fd);
-    if (iter == _timerCallbacks.end())
+    auto iter = m_timerCallbacks.find(fd);
+    if (iter == m_timerCallbacks.end())
     {
-        _timerCallbacks[fd].push_back(timer);
+        m_timerCallbacks[fd].push_back(timer);
     }
     return;
 }
 
 void TimerManager::unregisterTimer(int fd, TimerCallback timer)
 {
-    auto iter = _timerCallbacks.find(fd);
-    if (iter != _timerCallbacks.end())
+    auto iter = m_timerCallbacks.find(fd);
+    if (iter != m_timerCallbacks.end())
     {
-        _timerCallbacks.erase(iter);
+        m_timerCallbacks.erase(iter);
     }
     return;
 }
 
 void TimerManager::attach(TimerTask * task)
 {
-    auto iter = std::find(_wheelList.begin(), _wheelList.end(), task);
-    if (iter == _wheelList.end())
+    auto iter = std::find(m_wheelList.begin(), m_wheelList.end(), task);
+    if (iter == m_wheelList.end())
     {
-        _wheelList.push_back(task);
+        m_wheelList.push_back(task);
     }
     return;
 }
 
 void TimerManager::detach(TimerTask * task)
 {
-    auto iter = std::find(_wheelList.begin(), _wheelList.end(), task);
-    if (iter != _wheelList.end())
+    auto iter = std::find(m_wheelList.begin(), m_wheelList.end(), task);
+    if (iter != m_wheelList.end())
     {
-        _wheelList.erase(iter);
+        m_wheelList.erase(iter);
     }
     return;
 }
-

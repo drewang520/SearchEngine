@@ -1,43 +1,44 @@
 #include "Thread.h"
-#include <cstdio>
+#include "Logger.h"
+#include <cstring>
 #include <pthread.h>
-
-using std::perror;
+#include <string>
 
 thread_local const char * thread_name = "cacheID";
 
 Thread::Thread(const std::string& name)
-: _pid(0)
-, isrunning(false)
-, _name(name)
+: m_pid(0)
+, m_isRunning(false)
+, m_name(name)
 {
     
 }
 
 void Thread::start()
 {
-    int ret = pthread_create(&_pid, nullptr, threadFunc, (void *)this);
+    int ret = pthread_create(&m_pid, nullptr, threadFunc, (void *)this);
     if(ret != 0 )
     {
-        perror("子线程创建失败: ");                 
+        LOG_ERROR(std::string("pthread_create failed name=") + m_name
+                  + " reason=" + std::strerror(ret));
+        return;
     }
-    isrunning = true;
+    m_isRunning = true;
 }
 
 void Thread::end()
 {
-    pthread_join(_pid, nullptr);
-    isrunning = false;
+    pthread_join(m_pid, nullptr);
+    m_isRunning = false;
 }
 
 void * Thread::threadFunc(void *argc)
 {
     Thread * ptr = static_cast<Thread *>(argc);
-    thread_name = ptr->_name.c_str();
     if(ptr)
     {
+        thread_name = ptr->m_name.c_str();
         ptr->ChildWork(); //多态
     }
     pthread_exit((void *)0);
 }
-

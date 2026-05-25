@@ -21,6 +21,6 @@ public:
     void selectDb(unsigned int index);
 
 private:
-    Redis _redis;
-    std::mutex _mutex;
+    Redis m_redis;
+    std::mutex m_mutex;
 };

@@ -1,95 +1,149 @@
 #include "KeyRecommander.h"
 #include "ProtocolParser.h"
 #include "CacheManager.h"
+#include "Logger.h"
 #include <iostream>
 #include <mutex>
+#include <algorithm>
+#include <stdexcept>
+#include <vector>
 
 using namespace Protocol;
 
-KeyRecommander::KeyRecommander(string queryWords, const Configuration * config)
-: _queryWords(queryWords)
-, _pDict(new Dictionary(config))
-, _prique()
-, _config(config)
+namespace
+{
+const Dictionary& getSharedDictionary(const Configuration& config)
+{
+    static Dictionary dictionary(config);
+    return dictionary;
+}
+
+std::vector<std::string> splitUtf8Chars(const std::string& word)
+{
+    std::vector<std::string> chars;
+    for (size_t idx = 0; idx < word.size(); )
+    {
+        unsigned char ch = word[idx];
+        size_t nBytes = 1;
+        if (ch >= 0xF0)
+        {
+            nBytes = 4;
+        }
+        else if (ch >= 0xE0)
+        {
+            nBytes = 3;
+        }
+        else if (ch >= 0xC0)
+        {
+            nBytes = 2;
+        }
+        chars.push_back(word.substr(idx, nBytes));
+        idx += nBytes;
+    }
+    return chars;
+}
+}
+
+KeyRecommander::KeyRecommander(string queryWords, const Configuration& config)
+: m_queryWords(queryWords)
+, m_dict(getSharedDictionary(config))
+, m_config(config)
 {
 
 }
 
 string KeyRecommander::startQuery(int cacheID)
 {
-    std::cout << "Start query >: " << "\n";
-    CacheManager * cacheManager = CacheManager::createCacheManger();
-    std::lock_guard<std::mutex> singleMutex(cacheManager->getMutex(cacheID));
-    auto &Cache= cacheManager->getCache(cacheID);
-    json j;
-    if (Cache.get(_queryWords, j))
+    LOG_DEBUG("key recommender start query=" + m_queryWords
+              + " cacheID=" + std::to_string(cacheID));
+    if (cacheID < 0)
     {
-        return ProtocolParser::JsonToString(j);
+        throw std::out_of_range("KeyRecommander::startQuery invalid cacheID");
     }
+
+    CacheManager& cacheManager = CacheManager::createCacheManger();
+    const size_t cacheIndex = static_cast<size_t>(cacheID);
+    json j;
+    {
+        std::lock_guard<std::mutex> lock(cacheManager.getMutex(cacheIndex));
+        auto &cache = cacheManager.getCache(cacheIndex);
+        if (cache.get(m_queryWords, j))
+        {
+            LOG_DEBUG("key recommender cache hit query=" + m_queryWords);
+            return ProtocolParser::JsonToString(j);
+        }
+    }
+
+    LOG_DEBUG("key recommender cache miss query=" + m_queryWords);
     j = ProtocolParser::vecToJson(doQuery());
-    Cache.addElem(_queryWords, j);
+
+    {
+        std::lock_guard<std::mutex> lock(cacheManager.getMutex(cacheIndex));
+        auto &cache = cacheManager.getCache(cacheIndex);
+        json cached;
+        if (cache.get(m_queryWords, cached))
+        {
+            LOG_DEBUG("key recommender cache filled by another worker query=" + m_queryWords);
+            return ProtocolParser::JsonToString(cached);
+        }
+        cache.addElem(m_queryWords, j);
+        LOG_DEBUG("key recommender cache updated query=" + m_queryWords);
+    }
+
     return ProtocolParser::JsonToString(j);
 }
 
 vector<string> KeyRecommander::doQuery()
 {
-    map<string, set<int>> index = _pDict->getIndex();
-    vector<pair<string, int>> dict = _pDict->getDict();
+    const auto& index = m_dict.getIndex();
+    const auto& dict = m_dict.getDict();
     vector<string> queryResult = {};
     map<string, int> candidataWords = {};
-    for (size_t i = 0; i < _queryWords.size(); )
+    for (const auto& single_ch : splitUtf8Chars(m_queryWords))
     {
-        if ((_queryWords[i] & 0x80) == 0)
-        {
-            string singlie_ch = _queryWords.substr(i, 1);
-            queryIndex(candidataWords, index, dict, singlie_ch);
-            ++i;
-        }
-        else
-        {
-            int Cn_length = 0;
-            unsigned char c = _queryWords[i];
-            if (c >= 0xF0) Cn_length = 4;
-            else if (c >= 0xE0) Cn_length = 3;
-            else if (c >= 0xC0) Cn_length = 2;
-            string singlie_ch = _queryWords.substr(i, Cn_length);
-            queryIndex(candidataWords, index, dict, singlie_ch);
-            i += Cn_length;
-        }
+        queryIndex(candidataWords, index, dict, single_ch);
     }
     candidataSort(candidataWords, queryResult);
+    LOG_INFO("key recommender query=" + m_queryWords
+             + " candidates=" + std::to_string(candidataWords.size())
+             + " resultCount=" + std::to_string(queryResult.size()));
     return queryResult;
 }
 
-void KeyRecommander::queryIndex(map<string, int>& candidataWords, map<string, set<int>>& index, 
-                                    vector<pair<string, int>>& dict, const string& single_ch)
+void KeyRecommander::queryIndex(map<string, int>& candidataWords, const map<string, set<int>>& index, 
+                                    const vector<pair<string, int>>& dict, const string& single_ch) const
 {
-    map<string, set<int>>::iterator it = index.find(single_ch);
+    auto it = index.find(single_ch);
     if (it != index.end())
     {
-        for (auto &elem : it->second)
+        for (auto elem : it->second)
         {
-            candidataWords[dict[elem].first] = dict[elem].second;
+            if (elem >= 0 && static_cast<size_t>(elem) < dict.size())
+            {
+                candidataWords[dict[elem].first] = dict[elem].second;
+            }
         }
     }
 }
 
-void KeyRecommander::candidataSort(map<string, int>& candidataWords, vector<string>& queryResult)
+void KeyRecommander::candidataSort(const map<string, int>& candidataWords, vector<string>& queryResult) const
 {
-    CandidateResult canresult;
+    priority_queue<CandidateResult, vector<CandidateResult>, CompareHot> prique;
     for (const auto& [word, frequency] : candidataWords)
     {
-        canresult._word = word;
-        canresult._freq = frequency;
-        canresult._dist = editDistance(canresult._word, _queryWords);
-        _prique.push(canresult);         
+        CandidateResult canresult;
+        canresult.m_word = word;
+        canresult.m_freq = frequency;
+        canresult.m_dist = editDistance(canresult.m_word, m_queryWords);
+        prique.push(canresult);         
     }
 
     size_t candidataNum = 0;
-    while (!_prique.empty() && candidataNum != stoi(_config->getConfig().at("candidataNum")))
+    const size_t resultLimit = static_cast<size_t>(std::stoi(m_config.getConfig().at("candidataNum")));
+    while (!prique.empty() && candidataNum != resultLimit)
     {
-        queryResult.push_back(_prique.top()._word);
-        _prique.pop();
+        queryResult.push_back(prique.top().m_word);
+        prique.pop();
         ++candidataNum;
     }
 }
@@ -130,11 +184,13 @@ int triple_min(const int &a, const int &b, const int &c)
 	return a < b ? (a < c ? a : c) : (b < c ? b : c);
 }
 
-int KeyRecommander::editDistance(const std::string & lhs, const std::string &rhs)
+int KeyRecommander::editDistance(const std::string & lhs, const std::string &rhs) const
 {//计算最小编辑距离-包括处理中英文
-	size_t lhs_len = length(lhs);
-	size_t rhs_len = length(rhs);
-	int editDist[lhs_len + 1][rhs_len + 1];
+    std::vector<std::string> lhsChars = splitUtf8Chars(lhs);
+    std::vector<std::string> rhsChars = splitUtf8Chars(rhs);
+	size_t lhs_len = lhsChars.size();
+	size_t rhs_len = rhsChars.size();
+    std::vector<std::vector<int>> editDist(lhs_len + 1, std::vector<int>(rhs_len + 1, 0));
 	for(size_t idx = 0; idx <= lhs_len; ++idx)
 	{
 		editDist[idx][0] = idx;
@@ -145,19 +201,11 @@ int KeyRecommander::editDistance(const std::string & lhs, const std::string &rhs
 		editDist[0][idx] = idx;
 	}
 
-	std::string sublhs, subrhs;
-	for(std::size_t dist_i = 1, lhs_idx = 0; dist_i <= lhs_len; ++dist_i, ++lhs_idx)
+	for(std::size_t dist_i = 1; dist_i <= lhs_len; ++dist_i)
 	{
-		size_t nBytes = nBytesCode(lhs[lhs_idx]);
-		sublhs = lhs.substr(lhs_idx, nBytes);
-		lhs_idx += (nBytes - 1);
-
-		for(std::size_t dist_j = 1, rhs_idx = 0; dist_j <= rhs_len; ++dist_j, ++rhs_idx)
+		for(std::size_t dist_j = 1; dist_j <= rhs_len; ++dist_j)
 		{
-			nBytes = nBytesCode(rhs[rhs_idx]);
-			subrhs = rhs.substr(rhs_idx, nBytes);
-			rhs_idx += (nBytes - 1);
-			if(sublhs == subrhs)
+			if(lhsChars[dist_i - 1] == rhsChars[dist_j - 1])
 			{
 				editDist[dist_i][dist_j] = editDist[dist_i - 1][dist_j - 1];
 			}
@@ -172,4 +220,3 @@ int KeyRecommander::editDistance(const std::string & lhs, const std::string &rhs
 	}
 	return editDist[lhs_len][rhs_len];
 }
-

@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <set>
 
 using std::string;
 using std::vector;
@@ -18,16 +19,16 @@ class CppJiebaSplit
 : public NoCopyable
 {
 public:
-    CppJiebaSplit(const Configuration * config);
+    CppJiebaSplit(const Configuration& config);
 
     void cut(const string& key, vector<string>& clearWords) const;
     void cut(const string& key, map<string, int>& words) const;
     
 
 private:
-    const Configuration * _config;
-    cppjieba::Jieba  _jieba;
-    const set<string>& _stopWords;
+    const Configuration& m_config;
+    cppjieba::Jieba  m_jieba;
+    const std::set<std::string>& m_stopWords;
 };
 
 #endif

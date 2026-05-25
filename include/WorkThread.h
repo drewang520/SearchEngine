@@ -1,27 +1,27 @@
 #ifndef __WORKTHREAD_H__
 #define __WORKTHREAD_H__
 
+#include "Logger.h"
 #include "Thread.h"
 #include "ThreadPool.h"
 #include "TimerManager.h"
-#include <iostream>
 
 class WorkThread
 : public Thread
 {
 public:
    WorkThread(ThreadPool & threadpool, const std::string& name)
-   : _threadpool(threadpool)
+   : m_threadpool(threadpool)
    , Thread(name)
    {
-       std::cout << "WorkThread()" << "\n";
+       LOG_DEBUG("work thread constructed name=" + name);
    }
    void ChildWork() override
    {
-        _threadpool.threadFunc();
+        m_threadpool.threadFunc();
    }
 private:
-   ThreadPool & _threadpool;
+   ThreadPool & m_threadpool;
 };
 
 class TimerThread
@@ -31,7 +31,7 @@ public:
     TimerThread(const std::string& name)
     : Thread(name)
     {
-        std::cout << "TimerThread()" << "\n";
+        LOG_DEBUG("timer thread constructed name=" + name);
     }
 
     void ChildWork() override

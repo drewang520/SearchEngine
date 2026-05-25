@@ -38,9 +38,9 @@ public:
 private:
     void Init(uint16_t length, char * value);
 private:
-    uint8_t _type; // 1字节
-    uint16_t _length; // 2字节
-    char * _value;
+    uint8_t m_type; // 1字节
+    uint16_t m_length; // 2字节
+    char * m_value;
 };
 
 };

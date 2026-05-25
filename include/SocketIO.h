@@ -20,7 +20,7 @@ public:
     int readLine(char *buf, int len);
     int writen(const char * buf, int len);
 private:
-    int _netfd;
+    int m_netfd;
 };
 
 #endif

@@ -8,28 +8,25 @@
 #include <memory>
 #include <vector>
 
-using std::vector;
-using std::unique_ptr;
-
 class ThreadPool
 {
     friend class WorkThread;
 public:
-    ThreadPool(size_t _threadNums, size_t _queSize);
+    ThreadPool(std::size_t threadNums, std::size_t queSize);
     ~ThreadPool();
     void start();
     void stop();
-    void addTask(unique_ptr<Task> task); 
-    unique_ptr<Task> getTask();
+    void addTask(std::unique_ptr<Task> task); 
+    std::unique_ptr<Task> getTask();
 
 private:
     void threadFunc();
 
 private:
-    size_t _threadNums;
-    vector<std::unique_ptr<Thread>> _threads;
-    size_t _queSize;
-    TaskQueue _taskque;
+    std::size_t m_threadNums;
+    std::vector<std::unique_ptr<Thread>> m_threads;
+    std::size_t m_queSize;
+    TaskQueue m_taskQue;
 };
 
 

@@ -1,12 +1,15 @@
 #include "Acceptor.h"
+#include "Logger.h"
 #include <asm-generic/socket.h>
-#include <cstdio>
+#include <cerrno>
+#include <cstring>
 #include <netinet/in.h>
+#include <string>
 #include <sys/socket.h>
 
-Acceptor::Acceptor(const string& ip, unsigned int port)
-: _socket()
-, _addr(ip, port)
+Acceptor::Acceptor(const std::string& ip, unsigned int port)
+: m_socket()
+, m_addr(ip, port)
 {
 
 }
@@ -26,50 +29,62 @@ void Acceptor::ready()
 
 void Acceptor::bind()
 {
-    int ret = ::bind(_socket.getfd(), (struct sockaddr *)_addr.getInetAddressPtr(), sizeof(struct sockaddr_in));
+    int ret = ::bind(m_socket.getfd(), (struct sockaddr *)m_addr.getInetAddressPtr(), sizeof(struct sockaddr_in));
     if (-1 == ret)
     {
-        perror("bind -1");
+        LOG_ERROR(std::string("bind failed fd=") + std::to_string(m_socket.getfd())
+                  + " reason=" + std::strerror(errno));
     }
 }
 
 void Acceptor::listen()
 {
-    int ret = ::listen(_socket.getfd(), 128);
+    int ret = ::listen(m_socket.getfd(), 128);
     if (-1 == ret)
     {
-        perror("listen -1");
+        LOG_ERROR(std::string("listen failed fd=") + std::to_string(m_socket.getfd())
+                  + " reason=" + std::strerror(errno));
     }
 }
 
 int Acceptor::accept()
 {
-    socklen_t socklen = sizeof(struct sockaddr_in);
-    int netfd = ::accept(_socket.getfd(), (struct sockaddr *)_addr.getInetAddressPtr(), &socklen);
+    struct sockaddr_in peerAddr;
+    socklen_t socklen = sizeof(peerAddr);
+    int netfd = ::accept(m_socket.getfd(), (struct sockaddr *)&peerAddr, &socklen);
+    if (-1 == netfd)
+    {
+        LOG_ERROR(std::string("accept failed fd=") + std::to_string(m_socket.getfd())
+                  + " reason=" + std::strerror(errno));
+    }
     return netfd;
 }
 
 void Acceptor::setReuseAddress()
 {
     int optival = 1;
-    int ret = ::setsockopt(_socket.getfd(), SOL_SOCKET, SO_REUSEADDR, &optival, sizeof(int));
+    int ret = ::setsockopt(m_socket.getfd(), SOL_SOCKET, SO_REUSEADDR, &optival, sizeof(int));
     if (-1 == ret)
     {
-        perror("setsockopt -1");
+        LOG_ERROR(std::string("setsockopt SO_REUSEADDR failed fd=")
+                  + std::to_string(m_socket.getfd())
+                  + " reason=" + std::strerror(errno));
     }
 }
 
 void Acceptor::setReusePort()
 {
     int optival = 1;
-    int ret = ::setsockopt(_socket.getfd(), SOL_SOCKET, SO_REUSEPORT, &optival, sizeof(int));
+    int ret = ::setsockopt(m_socket.getfd(), SOL_SOCKET, SO_REUSEPORT, &optival, sizeof(int));
     if (-1 == ret)
     {
-        perror("setsockopt -1");
+        LOG_ERROR(std::string("setsockopt SO_REUSEPORT failed fd=")
+                  + std::to_string(m_socket.getfd())
+                  + " reason=" + std::strerror(errno));
     }
 }
 
 int Acceptor::getfd() const
 {
-    return _socket.getfd();
+    return m_socket.getfd();
 }

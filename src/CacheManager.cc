@@ -1,117 +1,127 @@
 #include "CacheManager.h"
 #include "Configuration.h"
 #include "LRUCache.h"
+#include "Logger.h"
 #include "TimerManager.h"
 #include <cstddef>
-#include <pthread.h>
-#include <stdlib.h>
 #include <mutex>
-#include <iostream>
+#include <stdexcept>
+#include <vector>
 
-CacheManager * CacheManager::_pCacheManager = nullptr;
-pthread_once_t  CacheManager::_pthreadInit = PTHREAD_ONCE_INIT;
-LRUCache CacheManager::_mainCache = LRUCache();
-
-CacheManager * CacheManager::createCacheManger()
+CacheManager& CacheManager::createCacheManger()
 {
-    pthread_once(&_pthreadInit, init);
-    return _pCacheManager;
-}
-
-void CacheManager::init()
-{
-    _pCacheManager = new CacheManager();
-    atexit(destory);
+    static CacheManager cacheManager;
+    return cacheManager;
 }
 
 CacheManager::CacheManager()
-: _cacheNum(std::stoi(Configuration::createpInstance()->getConfig().at("threadNums")))
-, _caches()
+: m_cacheNum(std::stoi(Configuration::createpInstance().getConfig().at("threadNums")))
+, m_writeCacheDelay(std::stoi(Configuration::createpInstance().getConfig().at("writeCachedelay")))
+, m_cacheDataPath(Configuration::createpInstance().getConfig().at("cacheData"))
+, m_caches()
+, m_cacheMutexs(m_cacheNum)
 {
-    // 锁未初始化会出大问题
-     _cacheMutexs = std::vector<std::mutex>(_cacheNum + 1);
-    _mainCache.readFromFile(Configuration::createpInstance()->getConfig().at("cacheData"));
-    for (size_t idx = 0; idx < _cacheNum; ++idx)
+    LRUCache& mainCache = getMainCache();
+    mainCache.readFromFile(m_cacheDataPath);
+    LOG_INFO("CacheManager initialized workerCaches=" + std::to_string(m_cacheNum)
+             + " cacheData=" + m_cacheDataPath
+             + " writeDelay=" + std::to_string(m_writeCacheDelay));
+    m_caches.reserve(m_cacheNum);
+    for (size_t idx = 0; idx < m_cacheNum; ++idx)
     {
-        _caches.push_back(LRUCache(_mainCache));
+        m_caches.push_back(LRUCache(mainCache));
     }
 }
 
 LRUCache & CacheManager::getCache(size_t cacheID)
 {
-    return _caches[cacheID];
+    if (cacheID >= m_caches.size())
+    {
+        LOG_ERROR("CacheManager::getCache invalid cacheID=" + std::to_string(cacheID)
+                  + " cacheNum=" + std::to_string(m_caches.size()));
+        throw std::out_of_range("CacheManager::getCache invalid cacheID");
+    }
+    return m_caches[cacheID];
 }
 
 LRUCache& CacheManager::getMainCache()
 {
-    return _mainCache;
+    static LRUCache mainCache;
+    return mainCache;
 }
 
 std::mutex & CacheManager::getMutex(size_t cacheID)
 {
-    return _cacheMutexs[cacheID];
+    if (cacheID >= m_cacheMutexs.size())
+    {
+        LOG_ERROR("CacheManager::getMutex invalid cacheID=" + std::to_string(cacheID)
+                  + " mutexNum=" + std::to_string(m_cacheMutexs.size()));
+        throw std::out_of_range("CacheManager::getMutex invalid cacheID");
+    }
+    return m_cacheMutexs[cacheID];
 }
 
 void CacheManager::PeriodicalUpdateCache()
 {
-    auto & resultList = _mainCache.getResultList(); 
-    auto & hashmap = _mainCache.getHashMap();
-    for (size_t cacheid = 0; cacheid < _cacheNum; ++cacheid)
+    LRUCache& mainCache = getMainCache();
+    size_t mergedUpdates = 0;
     {
-        std::unique_lock<std::mutex> lock(_cacheMutexs[cacheid], std::try_to_lock);
-        if (lock.owns_lock())
+        std::vector<std::unique_lock<std::mutex>> locks;
+        locks.reserve(m_cacheMutexs.size());
+        for (auto& mutex : m_cacheMutexs)
         {
-            auto & workPendingUpdateList = getCache(cacheid).getPendingUpdateList();
-            for (auto & [queryWord, value] : workPendingUpdateList)
-            {
-                auto iter = hashmap.find(queryWord);            
-                if (iter == hashmap.end())
-                {
-                    _mainCache.addElem(queryWord, value);
-                }
-                else 
-                {
-                   resultList.splice(resultList.begin(), resultList, iter->second);
-                }
-            }
-            workPendingUpdateList.clear();
+            locks.emplace_back(mutex);
+        }
+
+        for (auto& cache : m_caches)
+        {
+            mergedUpdates += mergePendingUpdates(cache, mainCache);
+        }
+        mainCache.getPendingUpdateList().clear();
+
+        for (auto& cache : m_caches)
+        {
+            cache.update(mainCache);
+        }
+    }
+    LOG_INFO("cache sync finished workerCaches=" + std::to_string(m_cacheNum)
+             + " mergedUpdates=" + std::to_string(mergedUpdates)
+             + " mainCacheSize=" + std::to_string(mainCache.getResultList().size()));
+    writeMainCacheIfNeeded(mainCache);
+}
+
+size_t CacheManager::mergePendingUpdates(LRUCache& cache, LRUCache& mainCache)
+{
+    auto & resultList = mainCache.getResultList(); 
+    auto & hashmap = mainCache.getHashMap();
+    auto & pendingUpdateList = cache.getPendingUpdateList();
+    size_t mergedCount = pendingUpdateList.size();
+
+    for (auto & [queryWord, value] : pendingUpdateList)
+    {
+        auto iter = hashmap.find(queryWord);            
+        if (iter == hashmap.end())
+        {
+            mainCache.addElem(queryWord, value);
         }
         else 
         {
-            std::cout << "出现了竞争条件" << "\n";
-            continue;
-        }
-    }
-    {
-        size_t cacheID = 0;
-        std::lock_guard<std::mutex> lock0(_cacheMutexs[cacheID++]);
-        std::lock_guard<std::mutex> lock1(_cacheMutexs[cacheID++]); 
-        std::lock_guard<std::mutex> lock2(_cacheMutexs[cacheID++]); 
-        std::lock_guard<std::mutex> lock3(_cacheMutexs[cacheID++]); 
-        std::lock_guard<std::mutex> lock4(_cacheMutexs[cacheID++]); 
-        for (auto & cache : _caches)
-        {
-            cache.update(_mainCache);
+            resultList.splice(resultList.begin(), resultList, iter->second);
         }
     }
 
+    pendingUpdateList.clear();
+    return mergedCount;
+}
+
+void CacheManager::writeMainCacheIfNeeded(LRUCache& mainCache)
+{
     TimerManager * timerManager = TimerManager::createTimerManager();
-    if (timerManager->getWriteCacheTime() == std::stoi(Configuration::createpInstance()->getConfig().at("writeCachedelay")))
+    if (timerManager->getWriteCacheTime() == m_writeCacheDelay)
     {
-        std::cout << "time : " << timerManager->getWriteCacheTime() << "\n";
-        _mainCache.writeToFile(Configuration::createpInstance()->getConfig().at("cacheData"));
+        LOG_INFO("write main cache to file path=" + m_cacheDataPath
+                 + " elapsed=" + std::to_string(timerManager->getWriteCacheTime()));
+        mainCache.writeToFile(m_cacheDataPath);
         timerManager->clearCacheTime();
     }
-        /* std::cout << "没有锁上" << "\n"; */
 }
-
-
-void CacheManager::destory()
-{
-    if (_pCacheManager)
-    {
-        delete _pCacheManager;
-        _pCacheManager = nullptr;
-    }
-}
-

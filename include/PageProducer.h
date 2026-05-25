@@ -13,15 +13,15 @@ using std::pair;
 
 struct RSSItem
 {
-    string _title;
-    string _link;
-    string _description;
+    string m_title;
+    string m_link;
+    string m_description;
 };
 
 class PageProducer
 {
 public:
-    PageProducer(const Configuration * config);
+    PageProducer(const Configuration& config);
     void store();
     void pageDeduplicat();
 
@@ -29,9 +29,9 @@ private:
     void create(const string& filepath, const string& filename);
 
 private:
-    vector<RSSItem> _page;
-    map<int, pair<int, int>> _offsetPage;
-    const Configuration * _config;
+    vector<RSSItem> m_page;
+    map<int, pair<int, int>> m_offsetPage;
+    const Configuration& m_config;
 };
 
 #endif

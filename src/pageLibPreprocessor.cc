@@ -33,7 +33,7 @@ void pageLibPreprocessor::buildInvertIndexMap(const string& newripepage, const s
     /*     while (iss >> docid >> pos >> offset) */
     /*     { */
     /*         pos_len = {std::stoi(pos), std::stoi(offset)}; */
-    /*         _offsetLib.insert({std::stoi(docid), pos_len}); */
+    /*         m_offsetLib.insert({std::stoi(docid), pos_len}); */
     /*     } */
     /* } */
     
@@ -45,7 +45,7 @@ void pageLibPreprocessor::buildInvertIndexMap(const string& newripepage, const s
     cppjieba::Jieba jieba(dict_path, model_path, user_dict_path, idf_path, stop_word_path);
 
     vector<string> words;
-    set<string> _stopWords;
+    set<string> m_stopWords;
     vector<string> clearWords;
     ifstream ifs3(stop_word_path);
     string line;
@@ -55,7 +55,7 @@ void pageLibPreprocessor::buildInvertIndexMap(const string& newripepage, const s
         {
             line.pop_back();
         }
-        _stopWords.insert(line);
+        m_stopWords.insert(line);
     }
 
     std::cout << "newripepage: " << newripepage << "\n";
@@ -81,7 +81,7 @@ void pageLibPreprocessor::buildInvertIndexMap(const string& newripepage, const s
         std::cout << "docid_int = " << docid_int << "\n";
         string content = doc->FirstChildElement("content")->GetText();
         /* std::cout << "no problem CutCLear" << "\n"; */
-        dealContent(CutClear(content, jieba, words, clearWords,_stopWords),
+        dealContent(CutClear(content, jieba, words, clearWords,m_stopWords),
                         docid_int, wordFrequency, docFrequency);
         doc = doc->NextSiblingElement("doc");
         words.clear();
@@ -137,7 +137,7 @@ void pageLibPreprocessor::buildInvertIndexMap(const string& newripepage, const s
             id_weight = {sets.first, normalize_weight};
             occur_id_weight.insert(id_weight);
             pair<unordered_map<string, set<pair<int, float>>>::iterator, bool> p = 
-                    _invertIndexTable.insert({elem.first, occur_id_weight});
+                    m_invertIndexTable.insert({elem.first, occur_id_weight});
             if (! p.second)
             {
                 p.first->second.insert(id_weight);
@@ -202,7 +202,7 @@ void pageLibPreprocessor::dealContent(vector<string>& clearWords, int & docid_in
 void pageLibPreprocessor::store(const string& saveInvertIndex)
 {
     ofstream ofs("saveInvertIndex");
-    for (auto elem : _invertIndexTable)
+    for (auto elem : m_invertIndexTable)
     {
         ofs << elem.first << " ";
         for (auto sets : elem.second)

@@ -8,27 +8,24 @@
 #include "ThreadPool.h"
 #include "TcpServer.h"
 #include "CacheManager.h"
+#include "Logger.h"
 #include "KeyRecommander.h"
 #include "WebPageSearcher.h"
+#include <exception>
 #include <functional>
-#include <iostream>
 #include <string>
 
 using namespace Protocol;
-using std::endl;
-using std::cout;
 
 class Mytask
 : public Task
 {
 public:
-    Mytask(const Message&msg, const TcpConnectionPtr& con, const Configuration * config, CacheManager * cacheManager)
-    : _msg(msg)
-    , _con(con)
-    , _config(config)
-    , _keyCommander(_msg.data,  _config) 
-    , _webPageSearch(_msg.data, _config)
-    , _cacheManager(cacheManager)
+    Mytask(const Message&msg, const TcpConnectionPtr& con, const Configuration& config, CacheManager& cacheManager)
+    : m_msg(msg)
+    , m_con(con)
+    , m_config(config)
+    , m_cacheManager(cacheManager)
     {
                             
     }
@@ -38,88 +35,115 @@ public:
     void process() override
     {
         // 这里是可以获取到执行该任务的线程id的
-        if (_msg.id == Protocol::KEY_RECOMMAND)
+        if (m_msg.id == Protocol::KEY_RECOMMAND)
         {
-            std::cout << "KEY_RECOMMAND: " << "\n";
-            std::cout << "child thread_name : " << thread_name << "\n"; 
+            LOG_INFO(std::string("task=KEY_RECOMMAND thread=") + thread_name
+                     + " query=" + m_msg.data);
             // 这里为了减少锁的粒度（临界区的长度）,应该将Cache放入具体的模块之中而不是反过来
-            _msg.data = _keyCommander.startQuery(std::stoi(thread_name));
-            _cacheManager->getCache(std::stoi(thread_name)).getCacheElem();
+            KeyRecommander keyCommander(m_msg.data, m_config);
+            const int cacheID = std::stoi(thread_name);
+            m_msg.data = keyCommander.startQuery(cacheID);
+            auto& workerCache = m_cacheManager.getCache(static_cast<size_t>(cacheID));
+            LOG_DEBUG("worker cache size=" + std::to_string(workerCache.getResultList().size())
+                      + " cacheID=" + std::to_string(cacheID));
+            LOG_DEBUG("KEY_RECOMMAND response bytes=" + std::to_string(m_msg.data.size()));
         }
-        else if (_msg.id == Protocol::WEBPAGE_SEARCH)
+        else if (m_msg.id == Protocol::WEBPAGE_SEARCH)
         {
-            std::cout << "WEBPAGE_SEARCH: " << "\n";
-            _msg.data = ProtocolParser::JsonToString(
-                                 ProtocolParser::vecWebToJson(_webPageSearch.doQuery()));            
-            /* _msg.data = _cache.CacheTransaction(_msg.data, _webPageSearch); */
+            LOG_INFO("task=WEBPAGE_SEARCH query=" + m_msg.data);
+            WebPageSearch webPageSearch(m_msg.data, m_config);
+            m_msg.data = ProtocolParser::JsonToString(
+                                 ProtocolParser::vecWebToJson(webPageSearch.doQuery()));            
+            /* m_msg.data = _cache.CacheTransaction(m_msg.data, _webPageSearch); */
+            LOG_DEBUG("WEBPAGE_SEARCH response bytes=" + std::to_string(m_msg.data.size()));
+        }
+        else
+        {
+            LOG_WARN("unknown request id=" + std::to_string(m_msg.id));
+            return;
         }
         // 处理完毕后将msg返回给EventLoop进行IO操作
-        _con->sendInLoop(_msg.data);
+        m_con->sendInLoop(m_msg.data);
     }
 
 private:
-    Message _msg;
-    TcpConnectionPtr _con;
-    const Configuration * _config;
-    KeyRecommander _keyCommander;
-    WebPageSearch _webPageSearch;
-    CacheManager * _cacheManager;
+    Message m_msg;
+    TcpConnectionPtr m_con;
+    const Configuration& m_config;
+    CacheManager& m_cacheManager;
 };
 
 
 class RecommandSearchServer
 {
 public:
-    RecommandSearchServer(const Configuration * config)
-    : _config(config)
-    , _threadpool(stoi(config->getConfig().at("threadNums")), stoi(config->getConfig().at("queSize")))
-    , _tcpserver(config->getConfig().at("ip"), stoi(config->getConfig().at("port")))
-    , _cacheManager(CacheManager::createCacheManger())
+    RecommandSearchServer(const Configuration& config)
+    : m_threadPool(stoi(config.getConfig().at("threadNums")), stoi(config.getConfig().at("queSize")))
+    , m_tcpServer(config.getConfig().at("ip"), stoi(config.getConfig().at("port")))
+    , m_config(config)
+    , m_cacheManager(CacheManager::createCacheManger())
     {
 
     }
 
     void start()
     {
-        _threadpool.start();
-        _tcpserver.setAllCallback(std::bind(&RecommandSearchServer::ConnectionCallback, this, std::placeholders::_1),
+        LOG_INFO("server starting threadNums=" + m_config.getConfig().at("threadNums")
+                 + " queueSize=" + m_config.getConfig().at("queSize")
+                 + " listen=" + m_config.getConfig().at("ip")
+                 + ":" + m_config.getConfig().at("port"));
+        m_threadPool.start();
+        m_tcpServer.setAllCallback(std::bind(&RecommandSearchServer::ConnectionCallback, this, std::placeholders::_1),
                                   std::bind(&RecommandSearchServer::MessageCallback, this, std::placeholders::_1),
                                   std::bind(&RecommandSearchServer::CloseCallback, this, std::placeholders::_1));
-        _tcpserver.start();
+        m_tcpServer.start();
     }
 
     void ConnectionCallback(const  TcpConnectionPtr& con)
     {
-        cout << con->toString() << "has connected !" << endl;
+        LOG_INFO("connection open " + con->toString());
     }
 
     void MessageCallback(const  TcpConnectionPtr& con)
     {
         string msg = con->recvMsg();
-        cout << msg << "\n"; 
+        LOG_DEBUG("recv bytes=" + std::to_string(msg.size()) + " from=" + con->toString());
         Message recvmsg;
-        ProtocolParser::from_json(ProtocolParser::doParse(msg), recvmsg);
+        try
+        {
+            ProtocolParser::from_json(ProtocolParser::doParse(msg), recvmsg);
+        }
+        catch (const std::exception& ex)
+        {
+            LOG_ERROR(std::string("parse request failed from=") + con->toString()
+                      + " reason=" + ex.what());
+            return;
+        }
+        LOG_INFO("request id=" + std::to_string(recvmsg.id)
+                 + " length=" + std::to_string(recvmsg.length)
+                 + " data=" + recvmsg.data);
 
-        unique_ptr<Task> task(new Mytask(recvmsg, con, _config, _cacheManager));
-        _threadpool.addTask(std::move(task));
+        std::unique_ptr<Task> task(new Mytask(recvmsg, con, m_config, m_cacheManager));
+        m_threadPool.addTask(std::move(task));
     }
 
     void CloseCallback(const  TcpConnectionPtr& con)
     {
-        cout << con->toString() << "has closed!" << endl;
+        LOG_INFO("connection close " + con->toString());
     }
 
     ~RecommandSearchServer()
     {
-        _tcpserver.stop();
-        _threadpool.stop();
+        LOG_INFO("server stopping");
+        m_tcpServer.stop();
+        m_threadPool.stop();
     }
 
 private:
-    ThreadPool _threadpool;
-    TcpServer _tcpserver;
-    const Configuration * _config;
-    CacheManager * _cacheManager;
+    ThreadPool m_threadPool;
+    TcpServer m_tcpServer;
+    const Configuration& m_config;
+    CacheManager& m_cacheManager;
 };
 
 #endif

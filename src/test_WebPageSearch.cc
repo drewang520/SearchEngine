@@ -2,10 +2,11 @@
 #include "Configuration.h"
 #include <iostream>
 
-int main()
+int main(int argc, char * argv[])
 {
-    Configuration * pConfig = Configuration::createpInstance();
-    WebPageSearch webPageSearch("hello", pConfig);
+    Configuration& pConfig = Configuration::createpInstance(argc > 1 ? argv[1] : "../config/config.json");
+    std::string query = argc > 2 ? argv[2] : "审案";
+    WebPageSearch webPageSearch(query, pConfig);
     vector<WebPage> webPage =  webPageSearch.doQuery();
     for (size_t idx = 0; idx < webPage.size() && idx < 10; ++idx)
     {

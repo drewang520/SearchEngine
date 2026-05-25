@@ -4,130 +4,130 @@
 #include <string.h>
 
 TLV::TLVMessage::TLVMessage()
-: _type(0)
-, _length(0)
-, _value(nullptr)
+: m_type(0)
+, m_length(0)
+, m_value(nullptr)
 {
 
 }
 
 TLV::TLVMessage::TLVMessage(uint8_t type)
-: _type(type)
+: m_type(type)
 {
     Init(0, nullptr);
 }
 
 TLV::TLVMessage::TLVMessage(uint8_t type, uint16_t length)
-: _type(type)
+: m_type(type)
 {
     Init(length, nullptr);
 }
 
 TLV::TLVMessage::TLVMessage(uint8_t type, uint16_t length, const void * value)
 {
-    _type = type;
-    _length = length;
-    _value =  new char[length + 1]();
-    memcpy(_value, value, length);
+    m_type = type;
+    m_length = length;
+    m_value =  new char[length + 1]();
+    memcpy(m_value, value, length);
 }
 
 void TLV::TLVMessage::Init(uint16_t length, char * value)
 {
-    _length = length;
-    _value = value;
+    m_length = length;
+    m_value = value;
 }
 
 
 TLV::TLVMessage::TLVMessage(const TLVMessage& message)
-: _type(message._type)
-, _length(message._length)
-, _value(new char[_length + 1]())
+: m_type(message.m_type)
+, m_length(message.m_length)
+, m_value(new char[m_length + 1]())
 {
-    strcpy(_value, message._value);
+    strcpy(m_value, message.m_value);
 }
 
 TLV::TLVMessage& TLV::TLVMessage::operator=(const TLVMessage& message)
 {
     if (this != &message)
     {
-        _type = message._type;
-        _length = message._length;
-        delete [] _value;
-        _value = new char[_length + 1]();
-        strcpy(_value, message._value);
+        m_type = message.m_type;
+        m_length = message.m_length;
+        delete [] m_value;
+        m_value = new char[m_length + 1]();
+        strcpy(m_value, message.m_value);
     }
     return *this;
 }
 
 TLV::TLVMessage::TLVMessage(TLVMessage&& message)
-: _type(message._type)
-, _length(message._length)
-, _value(message._value)
+: m_type(message.m_type)
+, m_length(message.m_length)
+, m_value(message.m_value)
 {
-    message._type = 0;
-    message._length = 0;
-    message._value = nullptr;
+    message.m_type = 0;
+    message.m_length = 0;
+    message.m_value = nullptr;
 }
 
 TLV::TLVMessage& TLV::TLVMessage::operator=(TLVMessage&& message)
 {
     if (this != &message)
     {
-        _type = message._type;
-        _length = message._length;
-        delete [] _value;
-        _value = nullptr;
-        _value = message._value;
+        m_type = message.m_type;
+        m_length = message.m_length;
+        delete [] m_value;
+        m_value = nullptr;
+        m_value = message.m_value;
 
-        message._type = 0;
-        message._length = 0;
-        message._value = nullptr;
+        message.m_type = 0;
+        message.m_length = 0;
+        message.m_value = nullptr;
     }
     return *this;
 }
 
 TLV::TLVMessage::~TLVMessage()
 {
-    if (_value)
+    if (m_value)
     {
-        delete [] _value;
-        _value = nullptr;
+        delete [] m_value;
+        m_value = nullptr;
     }
 }
 
 void TLV::TLVMessage::encodeMessage(char * buf)
 {
     size_t offset = 0;
-    buf[offset++] = _type;
-    uint16_t value_length = htons(_length); 
+    buf[offset++] = m_type;
+    uint16_t value_length = htons(m_length); 
     memcpy(buf + offset, &value_length, 2);
     offset += 2;
-    memcpy(buf + offset, _value, _length);
+    memcpy(buf + offset, m_value, m_length);
 }
 
 void TLV::TLVMessage::decodeMessage(const char * buf)
 {
     if (3 <= strlen(buf))
     {
-        _type = buf[0];
+        m_type = buf[0];
         uint16_t nlen;
         memcpy(&nlen, buf+ 1, 2);
-        _length = ntohs(nlen);
-        _value = new char[_length + 1]();
-        memcpy(_value, buf+ 3, _length);                
+        m_length = ntohs(nlen);
+        m_value = new char[m_length + 1]();
+        memcpy(m_value, buf+ 3, m_length);                
     }
 }
 
 uint8_t TLV::TLVMessage::getType()
 {
-    return _type;
+    return m_type;
 }
 uint16_t TLV::TLVMessage::getLength()
 {
-    return _length;
+    return m_length;
 }
 
 const char * TLV::TLVMessage::getValue()
 {
-    return _value;
+    return m_value;
 }

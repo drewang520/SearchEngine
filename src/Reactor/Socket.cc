@@ -4,21 +4,21 @@
 
 Socket::Socket()
 {
-    _socketfd = socket(AF_INET, SOCK_STREAM, 0); 
+    m_socketfd = socket(AF_INET, SOCK_STREAM, 0); 
 }
 
 Socket::~Socket()
 {
-    close(_socketfd);
+    close(m_socketfd);
 }
 
 int Socket::getfd() const
 {
-    return _socketfd;
+    return m_socketfd;
 }
 
 Socket::Socket(int fd)
-: _socketfd(fd)
+: m_socketfd(fd)
 {
 
 }

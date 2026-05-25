@@ -16,8 +16,8 @@ public:
     void signalAll();
     
 private:
-    pthread_cond_t _cond;
-    MutexLock & _mutex;
+    pthread_cond_t m_cond;
+    MutexLock & m_mutex;
 };
 
 #endif

@@ -9,7 +9,7 @@
 using namespace pybind11;
 
 Crawl_XML::Crawl_XML(const std::string& xmllink)
-: _link(xmllink)
+: m_link(xmllink)
 {
     std::string xml_content;
     pybind11::scoped_interpreter guard{}; //初始化 Python解释器
@@ -19,7 +19,7 @@ Crawl_XML::Crawl_XML(const std::string& xmllink)
     sys.attr("path").attr("append")(moudule_dir);
     try {
         pybind11::module_ cale = pybind11::module_::import("obtain_xml");
-        pybind11::object raw_xml = cale.attr("download_xml")(_link);
+        pybind11::object raw_xml = cale.attr("download_xml")(m_link);
         xml_content = raw_xml.cast<std::string>();
         if (xml_content.find("Error:") == 0)
         {
@@ -31,7 +31,7 @@ Crawl_XML::Crawl_XML(const std::string& xmllink)
 
     /* std::cout << "xml content: " << xml_content << "\n"; */
     doPrase(xml_content);
-    for (auto & field : _fields)
+    for (auto & field : m_fields)
     {
         std::string link = "http://www.people.com.cn/rss/" + field + ".xml";
         std::string storefile = "/home/drewang/study/project/search_engine/raw_data/module2/people_yuliao2/cn/" 
@@ -72,14 +72,14 @@ void Crawl_XML::splitLink(const std::string& link)
     {
         size_t second_lash_slash = link.find_last_of('/', last_slash - 1);
         std::string field= link.substr(second_lash_slash + 1, last_slash - second_lash_slash - 1);
-        _fields.push_back(field);
+        m_fields.push_back(field);
         /* std::cout << "提取的类别是：" << field << "\n"; */
     }
 }
 
 void Crawl_XML::print()
 {
-    for (auto & field : _fields)
+    for (auto & field : m_fields)
     {
         std::cout << field << "\n";
     }

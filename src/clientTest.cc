@@ -47,9 +47,9 @@ void LoadHtml(json & j)
      system("google-chrome file:///home/drewang/study/project/search_engine/data/html/client.html");
 }
 
-void test() 
+void test(const std::string& configPath) 
 {
-    Configuration * config = Configuration::createpInstance();
+    Configuration& config = Configuration::createpInstance(configPath);
 
 	int clientfd = ::socket(AF_INET, SOCK_STREAM, 0);
 	if(clientfd < 0)
@@ -61,8 +61,8 @@ void test()
 	struct sockaddr_in serverAddr;
 	memset(&serverAddr, 0, sizeof(serverAddr));
 	serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(stoi(config->getConfig().at("port")));
-    serverAddr.sin_addr.s_addr = inet_addr(config->getConfig().at("ip").c_str());
+    serverAddr.sin_port = htons(stoi(config.getConfig().at("port")));
+    serverAddr.sin_addr.s_addr = inet_addr(config.getConfig().at("ip").c_str());
 	socklen_t length = sizeof(serverAddr);
 
 	if(::connect(clientfd,(struct sockaddr*)&serverAddr, length) < 0)
@@ -141,8 +141,8 @@ void test()
 	close(clientfd);
 } 
  
-int main(void)
+int main(int argc, char * argv[])
 {
-	test();
+	test(argc > 1 ? argv[1] : "../config/config.json");
 	return 0;
 }

@@ -7,17 +7,14 @@
 #include <memory>
 #include <functional>
 
-using std::function;
-using std::shared_ptr;
-
 class EventLoop;
 
 class TcpConnection
 : public std::enable_shared_from_this<TcpConnection>
 {
 public:
-    using TcpConnectionPtr = shared_ptr<TcpConnection>;
-    using TcpConnectionCallback = function<void (const TcpConnectionPtr& )>; 
+    using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
+    using TcpConnectionCallback = std::function<void (const TcpConnectionPtr& )>; 
 public:
     TcpConnection(int fd, EventLoop* loop);
     ~TcpConnection();
@@ -25,12 +22,12 @@ public:
     InetAddress getLocalInetAddress() const;
     InetAddress getClientInetAddress() const; 
 
-    void sendMsg(const string& msg);
-    string recvMsg();
+    void sendMsg(const std::string& msg);
+    std::string recvMsg();
 
-    void sendInLoop(const string& msg);
+    void sendInLoop(const std::string& msg);
 
-    string toString();
+    std::string toString();
 
     int Getfd() const;
 
@@ -48,15 +45,15 @@ private:
     // 注意数据成员书写的顺序与初始化列表的顺序
     // 可能会出现前后依赖而出错
     // 保持初始化列表顺序与声明顺序一致
-    Socket _socket;    
-    SocketIO _socketIO;
-    InetAddress _localAddress;
-    InetAddress _clientAddress;
+    Socket m_socket;    
+    SocketIO m_socketIO;
+    InetAddress m_localAddress;
+    InetAddress m_clientAddress;
 
-    EventLoop * _loop;
-    TcpConnectionCallback _connectionCb;
-    TcpConnectionCallback _messageCb;
-    TcpConnectionCallback _closeCb;
+    EventLoop * m_loop;
+    TcpConnectionCallback m_connectionCb;
+    TcpConnectionCallback m_messageCb;
+    TcpConnectionCallback m_closeCb;
     
 };
 

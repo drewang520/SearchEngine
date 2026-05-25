@@ -7,14 +7,14 @@
 using namespace tinyxml2;
 
 WebPage::WebPage()
-: _title()
-, _link()
+: m_title()
+, m_link()
 {
 
 }
 
 WebPage::WebPage(const string& doc)
-: _doc(doc)
+: m_doc(doc)
 {
     if (!doc.empty())
     {
@@ -25,10 +25,10 @@ WebPage::WebPage(const string& doc)
             /* std::cout << "xml parse success" << "\n"; */
             XMLElement * node = xml.RootElement();                        
             string string_id = node->FirstChildElement("docid")->GetText();
-            _id = stoi(string_id);
-            _title = node->FirstChildElement("title")->GetText();
-            _link = node->FirstChildElement("link")->GetText();
-            _context = node->FirstChildElement("content")->GetText();
+            m_id = stoi(string_id);
+            m_title = node->FirstChildElement("title")->GetText();
+            m_link = node->FirstChildElement("link")->GetText();
+            m_context = node->FirstChildElement("content")->GetText();
         }
         else 
         {
@@ -39,21 +39,21 @@ WebPage::WebPage(const string& doc)
 
 int WebPage::getDocId() const
 {
-    return _id;
+    return m_id;
 }
 
 string WebPage::getTitle() const
 {
-    return _title;
+    return m_title;
 }
 
 string WebPage::getLink() const
 {
-    return _link;
+    return m_link;
 }
 
 string WebPage::getDoc() const
 {
-    return _doc;
+    return m_doc;
 }
 

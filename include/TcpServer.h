@@ -4,15 +4,12 @@
 #include "Acceptor.h"
 #include "EventLoop.h"
 #include "TcpConnection.h"
-
 #include <string>
-
-using std::string;
 
 class TcpServer
 {
 public:
-    TcpServer(const string& ip, unsigned int port);
+    TcpServer(const std::string& ip, unsigned int port);
     ~TcpServer();
     
     void start();
@@ -24,8 +21,8 @@ public:
 
 
 private:
-    Acceptor _acceptor;
-    EventLoop _evtiloop;
+    Acceptor m_acceptor;
+    EventLoop m_eventLoop;
 };
 
 #endif

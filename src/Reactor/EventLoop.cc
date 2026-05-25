@@ -1,38 +1,41 @@
 #include "EventLoop.h"
+#include "Logger.h"
 #include "MutexLock.h"
+#include <cerrno>
 #include <cstdint>
+#include <cstring>
+#include <string>
 #include <unistd.h>
-#include <stdio.h>
 #include <sys/eventfd.h>
 
 EventLoop::EventLoop(Acceptor & acceptor)
-: _epfd(createEpollFd())
-, _evtfd(createEventFd())
-, _isloop(true)
-, _acceptor(acceptor)
-, _readyEvent(1024)
+: m_epfd(createEpollFd())
+, m_evtfd(createEventFd())
+, m_isloop(true)
+, m_acceptor(acceptor)
+, m_readyEvent(1024)
 {
-    addEpollFd(_acceptor.getfd());
-    addEpollFd(_evtfd);
+    addEpollFd(m_acceptor.getfd());
+    addEpollFd(m_evtfd);
 }
 
 EventLoop::~EventLoop()
 {
-    if (_epfd)
+    if (m_epfd)
     {
-        close(_epfd);
+        close(m_epfd);
     }
-    if (_evtfd)
+    if (m_evtfd)
     {
-        close(_evtfd);
+        close(m_evtfd);
     }
 }
 
 
 void EventLoop::loop()
 {
-    _isloop = true;
-    while (_isloop)
+    m_isloop = true;
+    while (m_isloop)
     {
         WaitEpoll();
     }
@@ -40,37 +43,37 @@ void EventLoop::loop()
 
 void EventLoop::WaitEpoll()
 {
-    int readyNum = epoll_wait(_epfd, _readyEvent.data(), 1024, 5000);
+    int readyNum = epoll_wait(m_epfd, m_readyEvent.data(), 1024, 5000);
     if (-1 == readyNum)
     {
-        perror("epoll_wait -1");
+        LOG_ERROR(std::string("epoll_wait failed: ") + std::strerror(errno));
         return;
     }
     else if (0 == readyNum)
     {
-        printf("connection time out !\n");
+        LOG_DEBUG("epoll wait timeout");
     }
     else 
     {
-        if (readyNum == (int) _readyEvent.size())
+        if (readyNum == (int) m_readyEvent.size())
         {
-            _readyEvent.resize(2 * readyNum);
+            m_readyEvent.resize(2 * readyNum);
         }
 
         for (int idx = 0; idx < readyNum; ++idx)
         {
-            if (_readyEvent[idx].data.fd == _acceptor.getfd())
+            if (m_readyEvent[idx].data.fd == m_acceptor.getfd())
             {
                 handleNewConnection();        
             }
-            else if (_readyEvent[idx].data.fd == _evtfd)
+            else if (m_readyEvent[idx].data.fd == m_evtfd)
             {
                 handleEventRead();
                 doFunctors();
             }
             else
             {
-                handleMessage(_readyEvent[idx].data.fd);
+                handleMessage(m_readyEvent[idx].data.fd);
             }
         }
     }
@@ -78,30 +81,37 @@ void EventLoop::WaitEpoll()
 
 void EventLoop::handleNewConnection()
 {
-    int netfd = _acceptor.accept();
+    int netfd = m_acceptor.accept();
+    if (-1 == netfd)
+    {
+        LOG_ERROR("accept returned -1");
+        return;
+    }
     addEpollFd(netfd);
     TcpConnectionPtr con(new TcpConnection(netfd, this));
 
-    con->LoginConnectionCallback(_connectionCb);
-    con->LoginMessageCallback(_messageCb);
-    con->LoginCloseCallback(_closeCb);
+    con->LoginConnectionCallback(m_connectionCb);
+    con->LoginMessageCallback(m_messageCb);
+    con->LoginCloseCallback(m_closeCb);
 
-    _tcpConns.insert(std::make_pair(netfd, con));
+    m_tcpConns.insert(std::make_pair(netfd, con));
 
+    LOG_INFO("new connection fd=" + std::to_string(netfd));
     con->ExConnectionCallback();
 }
 
 void EventLoop::handleMessage(int netfd)
 {
-    auto iter = _tcpConns.find(netfd);
-    if (iter != _tcpConns.end())
+    auto iter = m_tcpConns.find(netfd);
+    if (iter != m_tcpConns.end())
     {
         bool flag = iter->second->isClosed();
         if (flag)
         {
+            LOG_INFO("connection closed fd=" + std::to_string(netfd));
             iter->second->ExCloseCallback();
             delEpollFd(netfd);
-            _tcpConns.erase(iter);
+            m_tcpConns.erase(iter);
         }
         else 
         {
@@ -110,15 +120,15 @@ void EventLoop::handleMessage(int netfd)
     }
     else 
     {
-        printf("连接不存在！\n");
+        LOG_WARN("connection fd not found fd=" + std::to_string(netfd));
     }
 }
 
 void EventLoop::runEventLoop(Functor && _cb)
 {
     {
-        MutexLockGuard automutex(_mutex);
-        _functor.push_back(_cb);
+        MutexLockGuard automutex(m_mutex);
+        m_functor.push_back(_cb);
     }
     
     wakeup();
@@ -126,10 +136,10 @@ void EventLoop::runEventLoop(Functor && _cb)
 
 void EventLoop::doFunctors()
 {
-    vector<Functor> tmp;
+    std::vector<Functor> tmp;
     {
-        MutexLockGuard automutex(_mutex);
-        _functor.swap(tmp);
+        MutexLockGuard automutex(m_mutex);
+        m_functor.swap(tmp);
     }
 
     for (auto &cb: tmp)
@@ -143,7 +153,7 @@ int EventLoop::createEventFd()
     int evtfd = eventfd(10, 0);
     if (-1 == evtfd)
     {
-        perror("eventfd -1");
+        LOG_ERROR(std::string("eventfd failed: ") + std::strerror(errno));
         return -1;
     }
     return evtfd;
@@ -152,10 +162,10 @@ int EventLoop::createEventFd()
 void EventLoop::handleEventRead()
 {
     uint64_t one = 1;
-    int ret = ::read(_evtfd, &one, sizeof(one));
+    int ret = ::read(m_evtfd, &one, sizeof(one));
     if (ret != sizeof(one))
     {
-        perror("read -1");
+        LOG_ERROR(std::string("eventfd read failed: ") + std::strerror(errno));
         return;
     }
 }
@@ -163,10 +173,10 @@ void EventLoop::handleEventRead()
 void EventLoop::wakeup()
 {
     uint64_t one = 1;
-    int ret = ::write(_evtfd, &one, sizeof(one));
+    int ret = ::write(m_evtfd, &one, sizeof(one));
     if (ret != sizeof(one))
     {
-        perror("write -1");
+        LOG_ERROR(std::string("eventfd write failed: ") + std::strerror(errno));
         return;
     }
 }
@@ -174,18 +184,18 @@ void EventLoop::wakeup()
 
 void EventLoop::unloop()
 {
-    _isloop = false;
+    m_isloop = false;
 }
 
 int EventLoop::createEpollFd()
 {
-   _epfd = epoll_create(10);
-   if (-1 == _epfd)
+   m_epfd = epoll_create(10);
+   if (-1 == m_epfd)
    {
-       perror("epoll_create -1");
+       LOG_ERROR(std::string("epoll_create failed: ") + std::strerror(errno));
        return -1;
    }
-   return _epfd;
+   return m_epfd;
 }
 
 void EventLoop::addEpollFd(int fd)
@@ -194,10 +204,11 @@ void EventLoop::addEpollFd(int fd)
     evt.events = EPOLLIN;
     evt.data.fd = fd;
 
-    int ret = epoll_ctl(_epfd, EPOLL_CTL_ADD, fd, &evt);
+    int ret = epoll_ctl(m_epfd, EPOLL_CTL_ADD, fd, &evt);
     if (-1 == ret)
     {
-        perror("epoll_ctl -1");
+        LOG_ERROR(std::string("epoll_ctl add failed fd=") + std::to_string(fd)
+                  + " reason=" + std::strerror(errno));
         return;
     }
 }
@@ -208,26 +219,26 @@ void EventLoop::delEpollFd(int fd)
     evt.events = EPOLLIN;
     evt.data.fd = fd;
 
-    int ret = epoll_ctl(_epfd, EPOLL_CTL_DEL, fd, &evt);
+    int ret = epoll_ctl(m_epfd, EPOLL_CTL_DEL, fd, &evt);
     if (-1 == ret)
     {
-        perror("epoll_ctl -1");
+        LOG_ERROR(std::string("epoll_ctl del failed fd=") + std::to_string(fd)
+                  + " reason=" + std::strerror(errno));
         return;
     }
 }
 
 void EventLoop::LoginConnectionCallback(TcpConnectionCallback && connectioncb)
 {
-    _connectionCb = std::move(connectioncb);
+    m_connectionCb = std::move(connectioncb);
 }
 
 void EventLoop::LoginMessageCallback(TcpConnectionCallback && messagecb)
 {
-    _messageCb = std::move(messagecb);
+    m_messageCb = std::move(messagecb);
 }
 
 void EventLoop::LoginCloseCallback(TcpConnectionCallback && closecb)
 {
-    _closeCb = std::move(closecb);
+    m_closeCb = std::move(closecb);
 }
-

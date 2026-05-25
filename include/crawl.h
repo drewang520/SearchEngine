@@ -16,6 +16,6 @@ private:
     void splitLink(const std::string&);
 
 private:
-    std::string _link;
-    std::vector<std::string> _fields; 
+    std::string m_link;
+    std::vector<std::string> m_fields; 
 };

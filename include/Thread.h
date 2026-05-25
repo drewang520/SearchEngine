@@ -18,9 +18,9 @@ private:
     static void * threadFunc(void * argc);
 
 private:
-    pthread_t _pid;
-    bool isrunning;
-    std::string _name;
+    pthread_t m_pid;
+    bool m_isRunning;
+    std::string m_name;
 };
 
 

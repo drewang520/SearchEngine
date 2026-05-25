@@ -8,30 +8,30 @@
 #include <sstream>
 
 LRUCache::LRUCache()
-: _capacity(std::stoi(Configuration::createpInstance()->getConfig().at("cacheSize")))
-, _hashMap()
-, _resultList()
-, _pendingUpdateList()
+: m_capacity(std::stoi(Configuration::createpInstance().getConfig().at("cacheSize")))
+, m_hashMap()
+, m_resultList()
+, m_pendingUpdateList()
 {
 
 }
 
 LRUCache::LRUCache(const LRUCache& cache)
-: _capacity(cache._capacity)
-, _hashMap(cache._hashMap)
-, _resultList(cache._resultList)
-, _pendingUpdateList()
+: m_capacity(cache.m_capacity)
+, m_hashMap()
+, m_resultList()
+, m_pendingUpdateList()
 {
-    
+    update(cache); 
 }
 
 // 只用一个全局Cache版本，粒度很大
 string LRUCache::CacheTransaction(const string& queryWord, KeyRecommander& keyRecommander)
 {
-    auto iter = _hashMap.find(queryWord);
-    if (iter != _hashMap.end())
+    auto iter = m_hashMap.find(queryWord);
+    if (iter != m_hashMap.end())
     {
-        _resultList.splice(_resultList.begin(), _resultList, iter->second);
+        m_resultList.splice(m_resultList.begin(), m_resultList, iter->second);
         return ProtocolParser::JsonToString(iter->second->second);
     }
     else 
@@ -44,25 +44,25 @@ string LRUCache::CacheTransaction(const string& queryWord, KeyRecommander& keyRe
 
 void LRUCache::addElem(const string& queryWord, const json& value)
 {
-    if (_resultList.size() == _capacity)
+    if (m_resultList.size() == m_capacity)
     {
         // 执行LRU算法
-        _hashMap.erase(_resultList.back().first);
-        _resultList.pop_back();
+        m_hashMap.erase(m_resultList.back().first);
+        m_resultList.pop_back();
     }
-    _resultList.push_front(std::move(std::make_pair(queryWord, value)));
-    _hashMap[queryWord] = _resultList.begin();
-    _pendingUpdateList.push_front(std::move(std::make_pair(queryWord, value)));
+    m_resultList.push_front(std::move(std::make_pair(queryWord, value)));
+    m_hashMap[queryWord] = m_resultList.begin();
+    m_pendingUpdateList.push_front(std::move(std::make_pair(queryWord, value)));
 }
 
 bool LRUCache::get(const string& queryWord, json& value)
 {
-    auto iter = _hashMap.find(queryWord);
-    if (iter != _hashMap.end())
+    auto iter = m_hashMap.find(queryWord);
+    if (iter != m_hashMap.end())
     {
-        _resultList.splice(_resultList.begin(), _resultList, iter->second);
-        _pendingUpdateList.remove(*(iter->second));
-        _pendingUpdateList.push_front(std::move(std::make_pair(iter->second->first, iter->second->second)));
+        m_resultList.splice(m_resultList.begin(), m_resultList, iter->second);
+        m_pendingUpdateList.remove(*(iter->second));
+        m_pendingUpdateList.push_front(std::move(std::make_pair(iter->second->first, iter->second->second)));
         value = iter->second->second;
         return true;
     }
@@ -71,33 +71,33 @@ bool LRUCache::get(const string& queryWord, json& value)
 
 list<pair<std::string, json>>& LRUCache::getPendingUpdateList()
 {
-    return _pendingUpdateList;
+    return m_pendingUpdateList;
 }
 
 void LRUCache::update(const LRUCache& cache)
 {
     // 出现问题的地方，折腾了很久
-    /* _resultList.clear(); */
-    /* _hashMap.clear(); */
-    /* _resultList = cache._resultList; */
-    /* _hashMap = cache._hashMap; //这里会出现迭代器相关的问题 */
+    /* m_resultList.clear(); */
+    /* m_hashMap.clear(); */
+    /* m_resultList = cache.m_resultList; */
+    /* m_hashMap = cache.m_hashMap; //这里会出现迭代器相关的问题 */
 
-    _resultList = cache._resultList;
-    _hashMap.clear();
-    for (auto iter = _resultList.begin(); iter != _resultList.end(); ++iter)
+    m_resultList = cache.m_resultList;
+    m_hashMap.clear();
+    for (auto iter = m_resultList.begin(); iter != m_resultList.end(); ++iter)
     {
-        _hashMap[iter->first] = iter;
+        m_hashMap[iter->first] = iter;
     }
 }
 
 void LRUCache::getCacheElem() const
 {
-    std::cout << "cache.size: " << _resultList.size() << "\n";
-    for (auto it = _resultList.begin(); it != _resultList.end(); ++it)
+    std::cout << "cache.size: " << m_resultList.size() << "\n";
+    for (auto it = m_resultList.begin(); it != m_resultList.end(); ++it)
     {
         std::cout << it->first << ":" << it->second << "\n"; 
     }
-    /* for (const auto & [word, value] : _resultList) */
+    /* for (const auto & [word, value] : m_resultList) */
     /* { */
     /*     std::cout << word << ": " << value << "\n"; */
     /* } */
@@ -105,12 +105,12 @@ void LRUCache::getCacheElem() const
 
 list<pair<std::string, json>>& LRUCache::getResultList()
 {
-    return _resultList;
+    return m_resultList;
 }
 
 unordered_map<std::string, list<pair<std::string, json>>::iterator>& LRUCache::getHashMap()
 {
-    return _hashMap;
+    return m_hashMap;
 }
 
 void LRUCache::readFromFile(const string& filename)
@@ -123,17 +123,16 @@ void LRUCache::readFromFile(const string& filename)
         json value;
         std::istringstream iss(line);    
         iss >> word >> value;
-        _resultList.push_back(std::make_pair(word, value)); 
-        _hashMap[word] = --_resultList.end();
+        m_resultList.push_back(std::make_pair(word, value)); 
+        m_hashMap[word] = --m_resultList.end();
     }
 }
 
 void LRUCache::writeToFile(const string& filename)
 {
     std::ofstream ofs(filename);
-    for (const auto & [word, value] : _resultList)
+    for (const auto & [word, value] : m_resultList)
     {
         ofs << word << " " << value << "\n";
     }
 }
-

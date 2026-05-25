@@ -22,15 +22,13 @@ class Mytask
 {
 public:
     virtual ~Mytask() {}
-    Mytask(const Message&msg, const TcpConnectionPtr& con, const Configuration * config, 
+    Mytask(const Message&msg, const TcpConnectionPtr& con, const Configuration& config, 
                                 LRUCache& cache, std::mutex & mutex)
-    : _msg(msg)
-    , _con(con)
-    , _config(config)
-    , _keyCommander(_msg.data,  _config) 
-    , _webPageSearch(_msg.data, _config)
-    , _cache(cache)
-    , _mutex(mutex)
+    : m_msg(msg)
+    , m_con(con)
+    , m_config(config)
+    , m_cache(cache)
+    , m_mutex(mutex)
     {
                             
     }
@@ -38,56 +36,56 @@ public:
     void process() override
     {
         // msg相应的业务逻辑
-        if (_msg.id == Protocol::KEY_RECOMMAND)
+        if (m_msg.id == Protocol::KEY_RECOMMAND)
         {
             std::cout << "KEY_RECOMMAND: " << "\n";
+            KeyRecommander keyCommander(m_msg.data, m_config);
             {
-                std::lock_guard<std::mutex> lockGuard(_mutex);
-                _msg.data = _cache.CacheTransaction(_msg.data, _keyCommander);  
+                std::lock_guard<std::mutex> lockGuard(m_mutex);
+                m_msg.data = m_cache.CacheTransaction(m_msg.data, keyCommander);  
             }
-            _cache.getCacheElem();
+            m_cache.getCacheElem();
         }
-        else if (_msg.id == Protocol::WEBPAGE_SEARCH)
+        else if (m_msg.id == Protocol::WEBPAGE_SEARCH)
         {
             std::cout << "WEBPAGE_SEARCH: " << "\n";
-            _msg.data = ProtocolParser::JsonToString(
-                                 ProtocolParser::vecWebToJson(_webPageSearch.doQuery()));            
-            /* _msg.data = _cache.CacheTransaction(_msg.data, _webPageSearch); */
+            WebPageSearch webPageSearch(m_msg.data, m_config);
+            m_msg.data = ProtocolParser::JsonToString(
+                                 ProtocolParser::vecWebToJson(webPageSearch.doQuery()));            
+            /* m_msg.data = m_cache.CacheTransaction(m_msg.data, m_webPageSearch); */
         }
         // 处理完毕后将msg返回给EventLoop进行IO操作
-        _con->sendInLoop(_msg.data);
+        m_con->sendInLoop(m_msg.data);
     }
 
 private:
-    Message _msg;
-    TcpConnectionPtr _con;
-    const Configuration * _config;
-    KeyRecommander _keyCommander;
-    WebPageSearch _webPageSearch;
-    LRUCache & _cache;
-    std::mutex & _mutex;
+    Message m_msg;
+    TcpConnectionPtr m_con;
+    const Configuration& m_config;
+    LRUCache & m_cache;
+    std::mutex & m_mutex;
 };
 
 
 class RecommandSearchServer
 {
 public:
-    RecommandSearchServer(const Configuration * config)
-    : _threadpool(stoi(config->getConfig().at("threadNums")), stoi(config->getConfig().at("queSize")))
-    , _tcpserver(config->getConfig().at("ip"), stoi(config->getConfig().at("port")))
-    , _config(config)
-    , _cache()
+    RecommandSearchServer(const Configuration& config)
+    : m_threadpool(stoi(config.getConfig().at("threadNums")), stoi(config.getConfig().at("queSize")))
+    , m_tcpserver(config.getConfig().at("ip"), stoi(config.getConfig().at("port")))
+    , m_config(config)
+    , m_cache()
     {
         
     }
 
     void start()
     {
-        _threadpool.start();
-        _tcpserver.setAllCallback(std::bind(&RecommandSearchServer::ConnectionCallback, this, std::placeholders::_1),
+        m_threadpool.start();
+        m_tcpserver.setAllCallback(std::bind(&RecommandSearchServer::ConnectionCallback, this, std::placeholders::_1),
                                   std::bind(&RecommandSearchServer::MessageCallback, this, std::placeholders::_1),
                                   std::bind(&RecommandSearchServer::CloseCallback, this, std::placeholders::_1));
-        _tcpserver.start();
+        m_tcpserver.start();
     }
 
     void ConnectionCallback(const  TcpConnectionPtr& con)
@@ -102,8 +100,8 @@ public:
         Message recvmsg;
         ProtocolParser::from_json(ProtocolParser::doParse(msg), recvmsg);
 
-        unique_ptr<Task> task(new Mytask(recvmsg, con, _config, _cache, _mutex));
-        _threadpool.addTask(std::move(task));
+        std::unique_ptr<Task> task(new Mytask(recvmsg, con, m_config, m_cache, m_mutex));
+        m_threadpool.addTask(std::move(task));
     }
 
     void CloseCallback(const  TcpConnectionPtr& con)
@@ -113,16 +111,16 @@ public:
 
     ~RecommandSearchServer()
     {
-        _tcpserver.stop();
-        _threadpool.stop();
+        m_tcpserver.stop();
+        m_threadpool.stop();
     }
 
 private:
-    ThreadPool _threadpool;
-    TcpServer _tcpserver;
-    const Configuration * _config;
-    LRUCache _cache;
-    std::mutex _mutex;
+    ThreadPool m_threadpool;
+    TcpServer m_tcpserver;
+    const Configuration& m_config;
+    LRUCache m_cache;
+    std::mutex m_mutex;
 };
 
 #endif

@@ -1,11 +1,11 @@
 #include "CppJieBaSplit.h"
 
-CppJiebaSplit::CppJiebaSplit(const Configuration * config)
-: _config(config)
-, _stopWords(_config->getStopWords())
-, _jieba(_config->getConfig().at("dict_path").c_str(), _config->getConfig().at("model_path").c_str(),
-         _config->getConfig().at("user_dict_path"), _config->getConfig().at("idf_path"),
-         _config->getConfig().at("stop_word_path"))
+CppJiebaSplit::CppJiebaSplit(const Configuration& config)
+: m_config(config)
+, m_stopWords(m_config.getStopWords())
+, m_jieba(m_config.getConfig().at("dict_path").c_str(), m_config.getConfig().at("model_path").c_str(),
+         m_config.getConfig().at("user_dict_path"), m_config.getConfig().at("idf_path"),
+         m_config.getConfig().at("stop_word_path"))
 {
 
 }
@@ -13,8 +13,8 @@ CppJiebaSplit::CppJiebaSplit(const Configuration * config)
 void CppJiebaSplit::cut(const string& key, vector<string>& clearWords) const
 {
     vector<string> words;
-    /* _jieba.Cut(key, words, true); */
-    _jieba.CutAll(key, words);
+    /* m_jieba.Cut(key, words, true); */
+    m_jieba.CutAll(key, words);
 
     for (auto & word : words)
     {
@@ -22,7 +22,7 @@ void CppJiebaSplit::cut(const string& key, vector<string>& clearWords) const
         {
             word.pop_back();
         }
-        if (_stopWords.find(word) == _stopWords.end())
+        if (!word.empty() && m_stopWords.find(word) == m_stopWords.end())
         {
             clearWords.push_back(word);
         }
@@ -32,15 +32,15 @@ void CppJiebaSplit::cut(const string& key, vector<string>& clearWords) const
 void CppJiebaSplit::cut(const string& key, map<string, int>& clearWords) const
 {
     vector<string> words;
-    /* _jieba.Cut(key, words, true); */
-    _jieba.CutAll(key, words);
+    /* m_jieba.Cut(key, words, true); */
+    m_jieba.CutAll(key, words);
     for (auto & word : words)
     {
-        if (!word.empty() && word.back() == '\r' || word.back() == '\n')
+        if (!word.empty() && (word.back() == '\r' || word.back() == '\n'))
         {
             word.pop_back();
         }
-        if (_stopWords.find(word) == _stopWords.end())
+        if (!word.empty() && m_stopWords.find(word) == m_stopWords.end())
         {
             pair<map<string, int>::iterator, bool> p = clearWords.insert({word, 1});
             if (! p.second)

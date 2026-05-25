@@ -2,77 +2,84 @@
 #include "Task.h"
 
 TaskQueue::TaskQueue(size_t queSize)
-: _queSize(queSize)
-, _mutex()
-, _notEmpty(_mutex)
-, _notFull(_mutex)
-, _flag(true)
+: m_queSize(queSize)
+, m_mutex()
+, m_notEmpty(m_mutex)
+, m_notFull(m_mutex)
+, m_isRunning(true)
 {
 
 }
-
 
 TaskQueue::~TaskQueue()
 {
     
 }
 
-void TaskQueue::push(unique_ptr<Task> task)
+void TaskQueue::push(std::unique_ptr<Task> task)
 {
-    /* _mutex.lock(); */
-    //利用RAII的思想，资源分配即初始化
-    AutoMutexLock autolock(_mutex);
-    while(isFull())
+    MutexLockGuard autolock(m_mutex);
+    while(m_isRunning && isFullLocked())
     {
-        _notFull.wait();
+        m_notFull.wait();
     }
 
-    _taskque.push(std::move(task));
+    if (!m_isRunning)
+    {
+        return;
+    }
 
-    _notEmpty.signal();
-
-    /* _mutex.unlock(); */
+    m_taskQue.push(std::move(task));
+    m_notEmpty.signal();
 }
 
-unique_ptr<Task> TaskQueue::pop()
+std::unique_ptr<Task> TaskQueue::pop()
 {
-    /* _mutex.lock(); */
-    AutoMutexLock autolock(_mutex);
-    while(_flag && isEmpty())
+    MutexLockGuard autolock(m_mutex);
+    while(m_isRunning && isEmptyLocked())
     {
-        _notEmpty.wait(); 
+        m_notEmpty.wait(); 
     }
 
-    if(_flag)
-    {
-        unique_ptr<Task> front_task(std::move(_taskque.front()));
-
-        _taskque.pop();
-
-        _notFull.signal();
-        /* _mutex.unlock(); */
-
-        return front_task;
-    }
-    else
+    if(isEmptyLocked())
     {
         return nullptr;
     }
+
+    std::unique_ptr<Task> frontTask(std::move(m_taskQue.front()));
+    m_taskQue.pop();
+    m_notFull.signal();
+
+    return frontTask;
 }
 
 bool TaskQueue::isEmpty()
 {
-    return _taskque.empty();
+    MutexLockGuard autolock(m_mutex);
+    return isEmptyLocked();
 }
 
 bool TaskQueue::isFull()
 {
-    return _taskque.size() == _queSize;
+    MutexLockGuard autolock(m_mutex);
+    return isFullLocked();
 }
 
 void TaskQueue::wakeup()
 {
-    _flag = false;
-    _notEmpty.signalAll();
+    MutexLockGuard autolock(m_mutex);
+    m_isRunning = false;
+    m_notEmpty.signalAll();
+    m_notFull.signalAll();
+}
+
+bool TaskQueue::isEmptyLocked() const
+{
+    return m_taskQue.empty();
+}
+
+bool TaskQueue::isFullLocked() const
+{
+    return m_taskQue.size() == m_queSize;
 }
    

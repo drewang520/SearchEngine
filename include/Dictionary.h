@@ -17,16 +17,18 @@ using std::set;
 class Dictionary
 {
 public:
-    Dictionary(const Configuration * config);
+    Dictionary(const Configuration& config);
     vector<pair<string, int>> & getDict();
     map<string, set<int>> & getIndex();
+    const vector<pair<string, int>> & getDict() const;
+    const map<string, set<int>> & getIndex() const;
 
 private:
     void init();
 private:
-    vector<pair<string, int>> _dict;
-    map<string, set<int>> _index;
-    const Configuration * _config;
+    vector<pair<string, int>> m_dict;
+    map<string, set<int>> m_index;
+    const Configuration& m_config;
 
 };
 

@@ -1,41 +1,32 @@
 #ifndef _CONFIGURATION_H_
 #define _CONFIGURATION_H_
 
-#include <stdlib.h>
-#include <pthread.h>
 #include <string>
 #include <map>
 #include <set>
 
-using std::set;
-using std::string;
-using std::map;
 
 class Configuration
 {
 public:
-    static Configuration * createpInstance();
-    const map<string, string>& getConfig() const;
-    const set<string>& getStopWords() const;
+    static Configuration& createpInstance(const std::string& config_path = "../config/config.json");
+    const std::map<std::string, std::string>& getConfig() const;
+    const std::set<std::string>& getStopWords() const;
    
 private:
-    static void init();
-    static void destory();
-    void LoadStopWords();
+    void loadStopWords();
 
-    Configuration(const string& config_path);
+    Configuration(const std::string& config_path);
+
     Configuration(const Configuration& config) = delete;
     Configuration & operator=(const Configuration& config) = delete;
     Configuration(Configuration&& config) = delete;
     Configuration & operator=(Configuration&& config) = delete;
+
     ~Configuration() = default;
 
-private:
-    static Configuration * pInstance;
-    static pthread_once_t once;
-    static string _filepath;
-    map<string, string> _config;
-    set<string> _stopWords;
+    std::map<std::string, std::string> m_config;
+    std::set<std::string> m_stopWords;
 };
 
 #endif

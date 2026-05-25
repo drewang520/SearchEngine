@@ -22,11 +22,11 @@ public:
     string getTitle() const;
 
 private:
-    string _doc;
-    int _id;
-    string _title;
-    string _link;
-    string _context;
+    string m_doc;
+    int m_id;
+    string m_title;
+    string m_link;
+    string m_context;
 };
 
 

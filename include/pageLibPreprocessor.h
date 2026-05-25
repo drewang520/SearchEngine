@@ -20,7 +20,7 @@ using std::map;
 class pageLibPreprocessor
 {
 public:
-    pageLibPreprocessor(const Configuration * config);
+    pageLibPreprocessor(const Configuration& config);
     void buildInvertIndexMap();
     void store();
 
@@ -33,10 +33,10 @@ private:
     /*                              vector<string>& words, map<string, int>& clearWords, set<string>& stop_words); */
 
 private:
-    unordered_map<int, pair<int, int>> _offsetLib;
-    /* unordered_map<string, set< pair<int, double> >> _invertIndexTable; */
-    unordered_map<string, vector< pair<int, double> >> _invertIndexTable;
-    const Configuration * _config;
+    unordered_map<int, pair<int, int>> m_offsetLib;
+    /* unordered_map<string, set< pair<int, double> >> m_invertIndexTable; */
+    unordered_map<string, vector< pair<int, double> >> m_invertIndexTable;
+    const Configuration& m_config;
 };
 
 

@@ -17,7 +17,7 @@ using std::map;
 class DicProducer
 {
 public:
-    DicProducer(const string&, const Configuration * pInstance);
+    DicProducer(const string&, const Configuration& config);
     void buildEnDict(const set<string>& stopWords);
     void buildCnDict(const set<string>& stopWords);
     void createEnIndex();
@@ -33,11 +33,11 @@ private:
     string dealWord(string word);
 
 private:
-    vector<string> _files;
-    map<string, int> _dict;
-    vector<pair<string, int>> _dict2;
-    map<string, set<int>> _index;
-    const Configuration * _config;
+    vector<string> m_files;
+    map<string, int> m_dict;
+    vector<pair<string, int>> m_dict2;
+    map<string, set<int>> m_index;
+    const Configuration& m_config;
     // SplitTool * _cuttor;
 };
 

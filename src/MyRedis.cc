@@ -8,15 +8,15 @@
 using namespace Protocol;
 
 MyRedis::MyRedis(Redis & redis)
-: _redis(std::move(redis))
-, _mutex()
+: m_redis(std::move(redis))
+, m_mutex()
 {
 
 }
 
 string MyRedis::RedisTransaction(const string& queryWord, KeyRecommander& keyRecommander)
 {
-    auto value = _redis.get(queryWord);
+    auto value = m_redis.get(queryWord);
     if (value)
     {
         std::cout << "queryWord is found at redis!" << "\n";
@@ -24,8 +24,8 @@ string MyRedis::RedisTransaction(const string& queryWord, KeyRecommander& keyRec
         return *value;    
     }
 
-    std::lock_guard<std::mutex> lock(_mutex);
-    value = _redis.get(queryWord);
+    std::lock_guard<std::mutex> lock(m_mutex);
+    value = m_redis.get(queryWord);
     if (value)
     {
         std::cout << "redis has updated, queryWord is exist!" << "\n";
@@ -37,35 +37,35 @@ string MyRedis::RedisTransaction(const string& queryWord, KeyRecommander& keyRec
     std::cout << "queryword is no exists at redis" << "\n";
     string redis_val = ProtocolParser::JsonToString(
                          ProtocolParser::vecToJson(keyRecommander.doQuery()));
-    _redis.set(queryWord, redis_val);
+    m_redis.set(queryWord, redis_val);
     return redis_val;
 }
 
 string MyRedis::RedisTransaction(const string& queryWord, WebPageSearch & webPageSearch)
 {
-    if (_redis.exists(queryWord))
+    if (m_redis.exists(queryWord))
     {
         std::cout << "queryWord is found at redis!" << "\n";
-        /* return *_redis.get(queryWord); */    
-        return _redis.get(queryWord).value();    
+        /* return *m_redis.get(queryWord); */    
+        return m_redis.get(queryWord).value();    
     }
 
-    std::lock_guard<std::mutex> lock(_mutex);
-    if (_redis.exists(queryWord))
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (m_redis.exists(queryWord))
     {
         std::cout << "redis has updated, queryWord is exist!" << "\n";
-        return _redis.get(queryWord).value();
+        return m_redis.get(queryWord).value();
     }
     
     std::cout << "queryword is no exists at redis" << "\n";
     string redis_val = ProtocolParser::JsonToString(
                              ProtocolParser::vecWebToJson(webPageSearch.doQuery()));            
-    _redis.set(queryWord, redis_val);
+    m_redis.set(queryWord, redis_val);
     return redis_val;
 }
 
 void MyRedis::selectDb(unsigned int index)
 {
-    _redis.command("select", index);
+    m_redis.command("select", index);
 }
 

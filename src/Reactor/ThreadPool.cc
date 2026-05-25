@@ -1,14 +1,13 @@
 #include "ThreadPool.h"
 #include "WorkThread.h"
-#include <unistd.h>
 #include <memory>
 #include <string>
 
-ThreadPool::ThreadPool(size_t threadNums, size_t queSize)
-: _threadNums(threadNums)
-, _queSize(queSize)
-, _threads()
-, _taskque(_queSize)
+ThreadPool::ThreadPool(std::size_t threadNums, std::size_t queSize)
+: m_threadNums(threadNums)
+, m_queSize(queSize)
+, m_threads()
+, m_taskQue(queSize)
 {
 
 }
@@ -21,37 +20,34 @@ ThreadPool::~ThreadPool()
 
 void ThreadPool::start()
 {
-    for (size_t ret = 0; ret != _threadNums; ++ret)
+    for (std::size_t ret = 0; ret != m_threadNums; ++ret)
     {
-        unique_ptr<Thread> ptr(new WorkThread(*this, std::to_string(ret))); 
-        _threads.push_back(std::move(ptr));
+        std::unique_ptr<Thread> ptr(new WorkThread(*this, std::to_string(ret))); 
+        m_threads.push_back(std::move(ptr));
     }
-    unique_ptr<Thread> TimerPtr(new TimerThread(std::to_string(_threadNums)));
-    _threads.push_back(std::move(TimerPtr));
-    for(auto &_thread : _threads)
+    std::unique_ptr<Thread> TimerPtr(new TimerThread(std::to_string(m_threadNums)));
+    m_threads.push_back(std::move(TimerPtr));
+    for(auto &thread : m_threads)
     {
-        _thread->start();
+        thread->start();
     }
 }
 
 void ThreadPool::stop()
 {
-    while(!_taskque.isEmpty())
+    TimerManager::createTimerManager()->stop();
+    m_taskQue.wakeup();
+    for (auto & thread : m_threads)
     {
-        sleep(1);
-    }
-    _taskque.wakeup();
-    for (auto &_thread : _threads)
-    {
-       _thread->end(); 
+       thread->end(); 
     }
 }
 
-void ThreadPool::addTask(unique_ptr<Task> task)
+void ThreadPool::addTask(std::unique_ptr<Task> task)
 {
     if (task)
     {
-        _taskque.push(std::move(task));
+        m_taskQue.push(std::move(task));
     }
 }
 
@@ -59,7 +55,7 @@ void ThreadPool::threadFunc()
 {
     while (1)
     {
-        unique_ptr<Task> ptr(std::move(_taskque.pop()));
+        std::unique_ptr<Task> ptr(std::move(m_taskQue.pop()));
         if (ptr)
         {
            ptr->process(); //多态
@@ -70,4 +66,3 @@ void ThreadPool::threadFunc()
         }
     }
 }
-

@@ -1,18 +1,21 @@
 #include "SocketIO.h"
+#include "Logger.h"
 #include <cerrno>
+#include <cstring>
+#include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 SocketIO::SocketIO(int fd)
-: _netfd(fd)
+: m_netfd(fd)
 {
 
 }
 
 SocketIO::~SocketIO()
 {
-    close(_netfd);
+    // Socket owns and closes the fd; SocketIO only performs reads and writes.
 }
 
 int SocketIO::readn(char *buf, int len)
@@ -23,14 +26,15 @@ int SocketIO::readn(char *buf, int len)
 
     while(left > 0)
     {
-        ret = read(_netfd, pstr, left);
+        ret = read(m_netfd, pstr, left);
         if(-1 == ret && errno == EINTR)
         {
             continue;
         }
         else if(-1 == ret)
         {
-            perror("read error -1");
+            LOG_ERROR(std::string("socket read failed fd=") + std::to_string(m_netfd)
+                      + " reason=" + std::strerror(errno));
             return len - ret;
         }
         else if(0 == ret)
@@ -55,14 +59,15 @@ int SocketIO::writen(const char* buf, int len)
 
     while(left > 0)
     {
-        ret = ::write(_netfd, pstr, left);
+        ret = ::write(m_netfd, pstr, left);
         if(-1 == ret && errno == EINTR)
         {
             continue;
         }
         else if(-1 == ret)
         {
-            perror("writen error -1");
+            LOG_ERROR(std::string("socket write failed fd=") + std::to_string(m_netfd)
+                      + " reason=" + std::strerror(errno));
             return len - ret;
         }
         else if(0 == ret)
@@ -88,14 +93,15 @@ int SocketIO::readLine(char *buf, int len)
     while(left > 0)
     {
         //不会将缓冲区中的数据进行清空
-        ret = recv(_netfd, pstr, left, MSG_PEEK);
+        ret = recv(m_netfd, pstr, left, MSG_PEEK);
         if(-1 == ret && errno == EINTR)
         {
             continue;
         }
         else if(-1 == ret)
         {
-            perror("readLine error -1");
+            LOG_ERROR(std::string("socket readLine failed fd=") + std::to_string(m_netfd)
+                      + " reason=" + std::strerror(errno));
             return len - ret;
         }
         else if(0 == ret)

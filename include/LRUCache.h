@@ -36,10 +36,10 @@ public:
     unordered_map<std::string, list<pair<std::string, json>>::iterator>& getHashMap();
 
 private:
-    size_t _capacity;
-    unordered_map<std::string, list<pair<std::string, json>>::iterator> _hashMap;
-    list<pair<std::string, json>> _resultList;
-    list<pair<std::string, json>> _pendingUpdateList;
+    size_t m_capacity;
+    unordered_map<std::string, list<pair<std::string, json>>::iterator> m_hashMap;
+    list<pair<std::string, json>> m_resultList;
+    list<pair<std::string, json>> m_pendingUpdateList;
 };
 
 

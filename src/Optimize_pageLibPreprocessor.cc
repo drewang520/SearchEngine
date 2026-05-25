@@ -15,35 +15,35 @@ using std::pair;
 
 using namespace tinyxml2;
 
-pageLibPreprocessor::pageLibPreprocessor(const Configuration * config)
-: _config(config)
+pageLibPreprocessor::pageLibPreprocessor(const Configuration& config)
+: m_config(config)
 {
 
 }
 
 void pageLibPreprocessor::buildInvertIndexMap()
 {
-    string newripepage = _config->getConfig().at("newripepage");
-    std::ifstream ifs(_config->getConfig().at("newoffset"));
+    string newripepage = m_config.getConfig().at("newripepage");
+    std::ifstream ifs(m_config.getConfig().at("newoffset"));
     map<string, int> clearWords;
     map<string, set<int>> docFrequency;
-    CppJiebaSplit cppjieba(_config);
+    CppJiebaSplit cppjieba(m_config);
     string line;
     int docid, pos, offset;
     while (std::getline(ifs, line))
     {
         istringstream iss( line);
         iss >> docid >> pos >> offset;
-        _offsetLib[docid] = {pos, offset};
+        m_offsetLib[docid] = {pos, offset};
     }
     ifs.close();
-    int pageNum = _offsetLib.size();
+    int pageNum = m_offsetLib.size();
     ifs.open(newripepage);
     for (size_t i = 0; i < pageNum; ++i)
     {
-        ifs.seekg(_offsetLib[i + 1].first);
-        vector<char> buf(_offsetLib[i + 1].second + 1);
-        ifs.read(buf.data(), _offsetLib[i + 1].second);
+        ifs.seekg(m_offsetLib[i + 1].first);
+        vector<char> buf(m_offsetLib[i + 1].second + 1);
+        ifs.read(buf.data(), m_offsetLib[i + 1].second);
         if (!buf.empty())
         {
             XMLDocument xml;
@@ -60,15 +60,15 @@ void pageLibPreprocessor::buildInvertIndexMap()
             }
         }
     }
-    /* std::cout << "invertIndex.size() = " << _invertIndexTable.size() << "\n"; */
+    /* std::cout << "invertIndex.size() = " << m_invertIndexTable.size() << "\n"; */
 
     double all_weight = 0;
     set<double> weight;
-    for (auto & [word, index]: _invertIndexTable)
+    for (auto & [word, index]: m_invertIndexTable)
     {
         size_t docFre = docFrequency[word].size();
         /* std::cout << "docFre = " << docFre << "\n"; */
-        double idf = log2(pageNum / (docFre + 1)); 
+        double idf = log2((static_cast<double>(pageNum) + 1.0) / (static_cast<double>(docFre) + 1.0)) + 1.0; 
         /* std::cout << "idf = " << idf << "\n"; */
         for (auto & [docid, weight] : index)
         {
@@ -78,7 +78,7 @@ void pageLibPreprocessor::buildInvertIndexMap()
 
     // weight normalization
     unordered_map<int, double> docNorm2;
-    for (const auto & [word, postings] : _invertIndexTable)
+    for (const auto & [word, postings] : m_invertIndexTable)
     {
         for (const auto & [docid, weight] : postings)
         {
@@ -89,11 +89,14 @@ void pageLibPreprocessor::buildInvertIndexMap()
     {
         sum2 = std::sqrt(sum2);
     }
-    for (auto & [word, postings] : _invertIndexTable)
+    for (auto & [word, postings] : m_invertIndexTable)
     {
         for (auto & [docid, weight] : postings)
         {
-            weight /= docNorm2[docid];
+            if (docNorm2[docid] > 0)
+            {
+                weight /= docNorm2[docid];
+            }
         }
     }
 }
@@ -118,7 +121,7 @@ void pageLibPreprocessor::dealContent(map<string, int>& clearWords, int & docid_
         }
         occur_id_weight.push_back({docid_int, frequency});
         pair<unordered_map<string, vector<pair<int, double>>>::iterator, bool> p = 
-                                    _invertIndexTable.insert({word, occur_id_weight});
+                                    m_invertIndexTable.insert({word, occur_id_weight});
         if (!p.second)
         {
             p.first->second.push_back({docid_int, frequency});
@@ -128,8 +131,8 @@ void pageLibPreprocessor::dealContent(map<string, int>& clearWords, int & docid_
 
 void pageLibPreprocessor::store()
 {
-    ofstream ofs(_config->getConfig().at("invertIndexTable"));
-    for (auto elem : _invertIndexTable)
+    ofstream ofs(m_config.getConfig().at("invertIndexTable"));
+    for (auto elem : m_invertIndexTable)
     {
         ofs << elem.first;
         for (auto sets : elem.second)
@@ -140,7 +143,5 @@ void pageLibPreprocessor::store()
     }
     ofs.close();
 }
-
-
 
 

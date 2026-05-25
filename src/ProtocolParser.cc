@@ -39,16 +39,16 @@ void Protocol::ProtocolParser::jsonToVec(const json &j, vector<string>& vec)
 
 void Protocol::ProtocolParser::to_json(json & j, const WebPage& web)
 {
-    j = json{{"title", web._title},
-                 {"link", web._link}
+    j = json{{"title", web.m_title},
+                 {"link", web.m_link}
     };
 }
 
 void Protocol::ProtocolParser::from_json(const json & j, WebPage& web)
 {
     
-    j.at("title").get_to(web._title);
-    j.at("link").get_to(web._link);
+    j.at("title").get_to(web.m_title);
+    j.at("link").get_to(web.m_link);
 }
 
 json Protocol::ProtocolParser::vecWebToJson(const vector<WebPage>& web)

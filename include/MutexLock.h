@@ -17,25 +17,26 @@ public:
     
     pthread_mutex_t * getPtr();
 private:
-    pthread_mutex_t _mutex;
+    pthread_mutex_t m_mutex;
 };
 
 class MutexLockGuard
-: public MutexLock
 {
 public:
-    MutexLockGuard(MutexLock &mutex)
-    : _mutex(mutex)
+    MutexLockGuard(MutexLock & mutex)
+    : m_mutex(mutex)
     {
-        _mutex.lock();    
+        m_mutex.lock();    
     }
 
     ~MutexLockGuard()
     {
-        _mutex.unlock();
+        m_mutex.unlock();
     }
+    MutexLockGuard(const MutexLockGuard& rhs) = delete;
+    MutexLockGuard& operator=(const MutexLockGuard& rhs) = delete;
 private:
-    MutexLock &_mutex;
+    MutexLock & m_mutex;
 };
 
 #endif
