@@ -5,6 +5,8 @@
 *.so.*
 *.dylib
 *.dll
+*.agents
+*.codex
 
 # 可执行文件
 *.exe
