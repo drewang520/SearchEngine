@@ -1,7 +1,7 @@
-import requests
-import xml.etree.ElementTree as ET
 import os
 import time  # 导入时间模块
+import xml.etree.ElementTree as ET
+import requests
 
 
 def download_xml(url, save_path=None, headers=None, delay=0):
@@ -15,7 +15,7 @@ def download_xml(url, save_path=None, headers=None, delay=0):
 
     if headers is None:
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         }
 
     try:
@@ -34,8 +34,9 @@ def download_xml(url, save_path=None, headers=None, delay=0):
 
         if save_path:
             # 统一构造完整的目标文件路径
-            full_path = os.path.join("../../raw_data/module2/people_yuliao2/cn", 
-                                     f"{save_path}.xml")
+            full_path = os.path.join(
+                "../../raw_data/module2/people_yuliao2/cn", f"{save_path}.xml"
+            )
 
             # 获取该文件所在的目录
             folder = os.path.dirname(full_path)

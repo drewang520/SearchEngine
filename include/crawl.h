@@ -19,3 +19,4 @@ private:
     std::string m_link;
     std::vector<std::string> m_fields; 
 };
+
